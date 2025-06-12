@@ -3,6 +3,7 @@
 //  Petals.AI
 //
 //  Created by Yusuf Afifi on 12/06/2025.
+// Rishi Ab
 //
 
 import SwiftUI
