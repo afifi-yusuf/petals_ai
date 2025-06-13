@@ -1,6 +1,6 @@
 // In ChatbotViewModel.swift
 import SwiftUI
-import Foundation
+import FoundationModels
 
 // A single message in our chat history.
 struct ChatMessage: Identifiable {
@@ -25,19 +25,42 @@ class ChatbotViewModel: ObservableObject {
     
     func sendMessage() {
         guard !inputMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        
+
         let userMessage = ChatMessage(content: inputMessage, isUser: true)
         messages.append(userMessage)
-        
+
         let currentInput = inputMessage
         inputMessage = ""
         isLoading = true
-        
-        // Simulate response delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            let response = self.generateResponse(to: currentInput)
-            self.messages.append(ChatMessage(content: response, isUser: false))
-            self.isLoading = false
+
+        Task {
+            if #available(iOS 26.0, *) {
+                do {
+                    let session = LanguageModelSession()
+                    let response = try await session.respond(to: Prompt(currentInput))
+                    let responseContent = response.content
+                    await MainActor.run {
+                        messages.append(ChatMessage(content: responseContent, isUser: false))
+                        isLoading = false
+                    }
+                } catch {
+                    print("Error: \(error)")
+                    await MainActor.run {
+                        messages.append(ChatMessage(
+                            content: "Sorry, I encountered an error. Please try again.",
+                            isUser: false
+                        ))
+                        isLoading = false
+                    }
+                }
+            } else {
+                // Fallback for iOS versions earlier than 26.0
+                let reply = generateResponse(to: currentInput)
+                await MainActor.run {
+                    messages.append(ChatMessage(content: reply, isUser: false))
+                    isLoading = false
+                }
+            }
         }
     }
     
@@ -61,3 +84,4 @@ class ChatbotViewModel: ObservableObject {
         }
     }
 }
+
