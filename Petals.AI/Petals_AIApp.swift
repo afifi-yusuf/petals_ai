@@ -34,5 +34,8 @@ struct Petals_AIApp: App {
             ContentView()
         }
         .modelContainer(sharedModelContainer)
+        .onOpenURL { url in
+            GIDSignIn.sharedInstance.handle(url)
+        }
     }
 }
