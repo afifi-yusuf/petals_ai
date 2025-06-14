@@ -7,9 +7,15 @@
 
 import SwiftUI
 import SwiftData
+import GoogleSignIn  
 
 @main
 struct Petals_AIApp: App {
+    init() {
+            GIDSignIn.sharedInstance.configuration = GIDConfiguration(
+                clientID: "207124569970-gv87n0tk65h2klrip5f22umhi8f3bk7g.apps.googleusercontent.com"
+            )
+        }
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Item.self,

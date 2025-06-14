@@ -1,5 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
 	<key>UIBackgroundModes</key>
@@ -10,5 +8,22 @@
 	<string>Petals.AI needs access to your health data to provide personalized insights and track your wellness journey.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Petals.AI needs permission to update your health data for meditation and wellness tracking.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.207124569970-gv87n0tk65h2klrip5f22umhi8f3bk7g</string>
+			</array>
+		</dict>
+	</array>
+	<key>CFBundleIdentifier</key>
+	<string>com.Petals-AI</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>google</string>
+		<string>com.google</string>
+		<string>com.googleusercontent.apps</string>
+	</array>
 </dict>
 </plist>

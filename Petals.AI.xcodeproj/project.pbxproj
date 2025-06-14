@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		3A51EDFE2DFDC71E00F625CD /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 3A51EDFD2DFDC71E00F625CD /* GoogleSignIn */; };
+		3A51EE002DFDC71E00F625CD /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 3A51EDFF2DFDC71E00F625CD /* GoogleSignInSwift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		8D44A2172DFB71E300B896EF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -65,6 +70,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3A51EDFE2DFDC71E00F625CD /* GoogleSignIn in Frameworks */,
+				3A51EE002DFDC71E00F625CD /* GoogleSignInSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -125,6 +132,8 @@
 			);
 			name = Petals.AI;
 			packageProductDependencies = (
+				3A51EDFD2DFDC71E00F625CD /* GoogleSignIn */,
+				3A51EDFF2DFDC71E00F625CD /* GoogleSignInSwift */,
 			);
 			productName = Petals.AI;
 			productReference = 8D44A2052DFB71E100B896EF /* Petals.AI.app */;
@@ -208,6 +217,9 @@
 			);
 			mainGroup = 8D44A1FC2DFB71E100B896EF;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				3A51EDFC2DFDC71E00F625CD /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 8D44A2062DFB71E100B896EF /* Products */;
 			projectDirPath = "";
@@ -569,6 +581,30 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		3A51EDFC2DFDC71E00F625CD /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		3A51EDFD2DFDC71E00F625CD /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3A51EDFC2DFDC71E00F625CD /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+		3A51EDFF2DFDC71E00F625CD /* GoogleSignInSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3A51EDFC2DFDC71E00F625CD /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignInSwift;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 8D44A1FD2DFB71E100B896EF /* Project object */;
 }
