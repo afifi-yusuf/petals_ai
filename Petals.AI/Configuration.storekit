@@ -1,0 +1,58 @@
+{
+  "identifier" : "Petals.AI.Subscription",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_applicationInternalID" : "com.petals.ai",
+    "_developerTeamID" : "YOUR_TEAM_ID",
+    "_lastSynchronizedDate" : 710000000.00000000000000000
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "group1",
+      "localizations" : [
+        {
+          "description" : "Premium subscription for Petals.AI",
+          "displayName" : "Premium",
+          "locale" : "en_US"
+        }
+      ],
+      "name" : "Premium",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "8.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "com.petals.ai.premium.monthly",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Unlock all premium features",
+              "displayName" : "Monthly Premium",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.petals.ai.premium.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Monthly Premium",
+          "subscriptionGroupID" : "group1",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 2,
+    "minor" : 0
+  }
+} 

@@ -15,6 +15,8 @@ struct DashboardView: View {
     @State private var steps: Double = 0
     @State private var heartRate: Double = 0
     @State private var meditationMinutes: Int = 0
+    @State private var isLogoZoomed = false
+    @State private var showingSubscription = false
     
     var body: some View {
         NavigationView {
@@ -170,41 +172,58 @@ struct DashboardView: View {
                         VStack(alignment: .leading, spacing: 16) {
                             Text("Quick Actions")
                                 .font(.title2)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.primary)
+                                .fontWeight(.bold)
+                                .foregroundColor(.purple)
                                 .padding(.horizontal, 24)
                             
                             VStack(spacing: 12) {
                                 HStack(spacing: 12) {
-                                    EnhancedQuickActionButton(
-                                        title: "Start Session",
-                                        subtitle: "Begin meditation",
-                                        icon: "play.circle.fill",
-                                        gradientColors: [.purple, .pink]
-                                    )
+                                    Button(action: { showingSubscription = true }) {
+                                        VStack {
+                                            Image(systemName: "star.fill")
+                                                .font(.title2)
+                                            Text("Upgrade")
+                                                .font(.caption)
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                        .padding()
+                                        .background(
+                                            LinearGradient(
+                                                colors: [.purple, .blue],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            )
+                                        )
+                                        .foregroundColor(.white)
+                                        .cornerRadius(15)
+                                        .shadow(color: .purple.opacity(0.3), radius: 5, x: 0, y: 2)
+                                    }
                                     
                                     EnhancedQuickActionButton(
-                                        title: "Health Stats",
-                                        subtitle: "View details",
-                                        icon: "chart.line.uptrend.xyaxis",
-                                        gradientColors: [.blue, .cyan]
-                                    )
+                                        title: "Start Session",
+                                        icon: "play.fill",
+                                        color: .purple
+                                    ) {
+                                        // Start session action
+                                    }
                                 }
                                 
                                 HStack(spacing: 12) {
                                     EnhancedQuickActionButton(
-                                        title: "Progress",
-                                        subtitle: "Track journey",
-                                        icon: "chart.bar.fill",
-                                        gradientColors: [.green, .mint]
-                                    )
+                                        title: "View Health",
+                                        icon: "heart.fill",
+                                        color: .purple
+                                    ) {
+                                        // View health action
+                                    }
                                     
                                     EnhancedQuickActionButton(
-                                        title: "Settings",
-                                        subtitle: "Customize app",
-                                        icon: "gear",
-                                        gradientColors: [.orange, .yellow]
-                                    )
+                                        title: "Meditate",
+                                        icon: "moon.stars.fill",
+                                        color: .purple
+                                    ) {
+                                        // Meditate action
+                                    }
                                 }
                             }
                             .padding(.horizontal, 24)
@@ -220,6 +239,9 @@ struct DashboardView: View {
         }
         .onAppear {
             requestHealthKitAuthorization()
+        }
+        .sheet(isPresented: $showingSubscription) {
+            SubscriptionView()
         }
     }
     
@@ -400,47 +422,33 @@ struct EnhancedMeditationCard: View {
 
 struct EnhancedQuickActionButton: View {
     let title: String
-    let subtitle: String
     let icon: String
-    let gradientColors: [Color]
+    let color: Color
+    let action: () -> Void
     
     var body: some View {
-        Button(action: {
-            // Action
-        }) {
+        Button(action: action) {
             HStack(spacing: 12) {
                 Image(systemName: icon)
                     .font(.title2)
                     .foregroundStyle(
                         LinearGradient(
-                            colors: gradientColors,
+                            colors: [color, color.opacity(0.5)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
                 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.primary)
-                    
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                
-                Spacer()
-                
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                Text(title)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.primary)
             }
             .padding(16)
             .background(
                 RoundedRectangle(cornerRadius: 16)
                     .fill(.ultraThinMaterial)
-                    .shadow(color: gradientColors.first?.opacity(0.1) ?? .gray.opacity(0.1), radius: 6, x: 0, y: 3)
+                    .shadow(color: color.opacity(0.1), radius: 6, x: 0, y: 3)
             )
         }
         .buttonStyle(PlainButtonStyle())
