@@ -11,6 +11,7 @@ import GoogleSignIn
 
 @main
 struct Petals_AIApp: App {
+    @StateObject var appState = AppState()
     init() {
             GIDSignIn.sharedInstance.configuration = GIDConfiguration(
                 clientID: "207124569970-gv87n0tk65h2klrip5f22umhi8f3bk7g.apps.googleusercontent.com"
@@ -30,12 +31,20 @@ struct Petals_AIApp: App {
     }()
 
     var body: some Scene {
-        WindowGroup {
-            ContentView()
+            WindowGroup {
+                if appState.isSignedIn {
+                    DashboardView()
+                        .onOpenURL { url in
+                            GIDSignIn.sharedInstance.handle(url)
+                        }
+                        .environmentObject(appState)
+                } else {
+                    LoginView()
+                        .onOpenURL { url in
+                            GIDSignIn.sharedInstance.handle(url)
+                        }
+                        .environmentObject(appState)
+                }
+            }
         }
-        .modelContainer(sharedModelContainer)
-        .onOpenURL { url in
-            GIDSignIn.sharedInstance.handle(url)
-        }
-    }
 }

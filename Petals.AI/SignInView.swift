@@ -10,6 +10,8 @@ import GoogleSignIn
 import GoogleSignInSwift
 
 struct LoginView: View {
+    @EnvironmentObject var appState: AppState
+
     var body: some View {
         GoogleSignInButton(action: handleSignIn)
             .frame(width: 220, height: 50)
@@ -36,10 +38,8 @@ struct LoginView: View {
             }
 
             print("✅ Signed in as: \(user.profile?.email ?? "Unknown email")")
+
+            appState.isSignedIn = true
         }
     }
-}
-
-#Preview {
-    LoginView()
 }
