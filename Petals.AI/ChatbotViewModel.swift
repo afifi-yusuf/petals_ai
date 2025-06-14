@@ -18,7 +18,7 @@ class ChatbotViewModel: ObservableObject {
     init() {
         // Add welcome message
         messages.append(ChatMessage(
-            content: "Hello! I'm Petals, your health and wellness companion. How can I help you today?",
+            content: "Hello! I'm Petal, your health and wellness companion. How can I help you today?",
             isUser: false
         ))
     }

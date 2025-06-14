@@ -18,107 +18,205 @@ struct DashboardView: View {
     
     var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(spacing: 20) {
-                    // Welcome Section
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Welcome to Petals.AI")
-                            .font(.largeTitle)
-                            .bold()
-                        Text("Your health & meditation companion")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal)
-                    
-                    // Health Stats Grid
-                    LazyVGrid(columns: [
-                        GridItem(.flexible()),
-                        GridItem(.flexible())
-                    ], spacing: 16) {
-                        HealthStatCard(
-                            title: "Steps",
-                            value: "\(Int(steps))",
-                            icon: "figure.walk",
-                            color: .blue
-                        )
+            ZStack {
+                // Background gradient
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color.purple.opacity(0.1),
+                        Color.blue.opacity(0.05),
+                        Color.white
+                    ]),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+                
+                ScrollView {
+                    VStack(spacing: 24) {
+                        // Header with Logo
+                        VStack(spacing: 16) {
+                            HStack {
+                                // Logo
+                                Image("icon")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 50, height: 50)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .shadow(color: .purple.opacity(0.3), radius: 4, x: 0, y: 2)
+                                
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Petals AI")
+                                        .font(.title)
+                                        .fontWeight(.bold)
+                                        .foregroundStyle(
+                                            LinearGradient(
+                                                colors: [.purple, .blue],
+                                                startPoint: .leading,
+                                                endPoint: .trailing
+                                            )
+                                        )
+                                    
+                                    Text("Your wellness journey starts here")
+                                        .font(.subheadline)
+                                        .foregroundColor(.secondary)
+                                }
+                                
+                                Spacer()
+                            }
+                            .padding(.horizontal, 24)
+                            .padding(.top, 8)
+                        }
                         
-                        HealthStatCard(
-                            title: "Heart Rate",
-                            value: "\(Int(heartRate)) BPM",
-                            icon: "heart.fill",
-                            color: .red
-                        )
-                    }
-                    .padding(.horizontal)
-                    
-                    // Meditation Section
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Meditation")
-                            .font(.title2)
-                            .bold()
-                            .padding(.horizontal)
-                        
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 16) {
-                                MeditationCard(
-                                    title: "Mindful Breathing",
-                                    duration: "5 min",
-                                    icon: "wind"
+                        // Health Stats Section
+                        VStack(alignment: .leading, spacing: 16) {
+                            HStack {
+                                Text("Today's Health")
+                                    .font(.title2)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.primary)
+                                
+                                Spacer()
+                                
+                                Button(action: {
+                                    fetchHealthData()
+                                }) {
+                                    Image(systemName: "arrow.clockwise")
+                                        .font(.system(size: 16, weight: .medium))
+                                        .foregroundColor(.purple)
+                                }
+                            }
+                            .padding(.horizontal, 24)
+                            
+                            LazyVGrid(columns: [
+                                GridItem(.flexible()),
+                                GridItem(.flexible())
+                            ], spacing: 16) {
+                                EnhancedHealthStatCard(
+                                    title: "Steps",
+                                    value: "\(Int(steps))",
+                                    subtitle: "steps today",
+                                    icon: "figure.walk",
+                                    gradientColors: [.blue, .cyan],
+                                    progress: min(steps / 10000, 1.0)
                                 )
                                 
-                                MeditationCard(
-                                    title: "Body Scan",
-                                    duration: "10 min",
-                                    icon: "figure.stand"
-                                )
-                                
-                                MeditationCard(
-                                    title: "Stress Relief",
-                                    duration: "15 min",
-                                    icon: "leaf"
+                                EnhancedHealthStatCard(
+                                    title: "Heart Rate",
+                                    value: "\(Int(heartRate))",
+                                    subtitle: "BPM",
+                                    icon: "heart.fill",
+                                    gradientColors: [.red, .pink],
+                                    progress: 0.75
                                 )
                             }
-                            .padding(.horizontal)
+                            .padding(.horizontal, 24)
                         }
-                    }
-                    
-                    // Quick Actions
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Quick Actions")
-                            .font(.title2)
-                            .bold()
-                            .padding(.horizontal)
                         
-                        HStack(spacing: 16) {
-                            QuickActionButton(
-                                title: "Start Meditation",
-                                icon: "play.circle.fill",
-                                color: .purple
-                            )
+                        // Meditation Section
+                        VStack(alignment: .leading, spacing: 16) {
+                            HStack {
+                                Text("Meditation Sessions")
+                                    .font(.title2)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.primary)
+                                
+                                Spacer()
+                                
+                                Text("Choose your practice")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(.horizontal, 24)
                             
-                            QuickActionButton(
-                                title: "View Health",
-                                icon: "heart.text.square.fill",
-                                color: .green
-                            )
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 16) {
+                                    EnhancedMeditationCard(
+                                        title: "Mindful Breathing",
+                                        duration: "5 min",
+                                        description: "Focus on your breath",
+                                        icon: "wind",
+                                        gradientColors: [.mint, .green]
+                                    )
+                                    
+                                    EnhancedMeditationCard(
+                                        title: "Body Scan",
+                                        duration: "10 min",
+                                        description: "Relax your body",
+                                        icon: "figure.stand",
+                                        gradientColors: [.orange, .yellow]
+                                    )
+                                    
+                                    EnhancedMeditationCard(
+                                        title: "Stress Relief",
+                                        duration: "15 min",
+                                        description: "Find inner peace",
+                                        icon: "leaf",
+                                        gradientColors: [.purple, .indigo]
+                                    )
+                                    
+                                    EnhancedMeditationCard(
+                                        title: "Sleep Meditation",
+                                        duration: "20 min",
+                                        description: "Prepare for rest",
+                                        icon: "moon.stars",
+                                        gradientColors: [.indigo, .purple]
+                                    )
+                                }
+                                .padding(.horizontal, 24)
+                            }
                         }
-                        .padding(.horizontal)
+                        
+                        // Quick Actions
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text("Quick Actions")
+                                .font(.title2)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.primary)
+                                .padding(.horizontal, 24)
+                            
+                            VStack(spacing: 12) {
+                                HStack(spacing: 12) {
+                                    EnhancedQuickActionButton(
+                                        title: "Start Session",
+                                        subtitle: "Begin meditation",
+                                        icon: "play.circle.fill",
+                                        gradientColors: [.purple, .pink]
+                                    )
+                                    
+                                    EnhancedQuickActionButton(
+                                        title: "Health Stats",
+                                        subtitle: "View details",
+                                        icon: "chart.line.uptrend.xyaxis",
+                                        gradientColors: [.blue, .cyan]
+                                    )
+                                }
+                                
+                                HStack(spacing: 12) {
+                                    EnhancedQuickActionButton(
+                                        title: "Progress",
+                                        subtitle: "Track journey",
+                                        icon: "chart.bar.fill",
+                                        gradientColors: [.green, .mint]
+                                    )
+                                    
+                                    EnhancedQuickActionButton(
+                                        title: "Settings",
+                                        subtitle: "Customize app",
+                                        icon: "gear",
+                                        gradientColors: [.orange, .yellow]
+                                    )
+                                }
+                            }
+                            .padding(.horizontal, 24)
+                        }
+                        
+                        // Bottom spacing
+                        Spacer(minLength: 30)
                     }
-                }
-                .padding(.vertical)
-            }
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: {
-                        // Settings action
-                    }) {
-                        Image(systemName: "gear")
-                    }
+                    .padding(.vertical, 16)
                 }
             }
+            .navigationBarHidden(true)
         }
         .onAppear {
             requestHealthKitAuthorization()
@@ -180,84 +278,172 @@ struct DashboardView: View {
     }
 }
 
-struct HealthStatCard: View {
+// MARK: - Enhanced Components
+
+struct EnhancedHealthStatCard: View {
     let title: String
     let value: String
+    let subtitle: String
     let icon: String
-    let color: Color
+    let gradientColors: [Color]
+    let progress: Double
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: icon)
                     .font(.title2)
-                    .foregroundColor(color)
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: gradientColors,
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
                 Spacer()
+                
+                // Progress indicator
+                Circle()
+                    .stroke(gradientColors.first?.opacity(0.2) ?? .gray.opacity(0.2), lineWidth: 3)
+                    .frame(width: 24, height: 24)
+                    .overlay(
+                        Circle()
+                            .trim(from: 0, to: progress)
+                            .stroke(
+                                LinearGradient(
+                                    colors: gradientColors,
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                style: StrokeStyle(lineWidth: 3, lineCap: .round)
+                            )
+                            .rotationEffect(.degrees(-90))
+                    )
             }
             
             Text(value)
                 .font(.title)
-                .bold()
+                .fontWeight(.bold)
+                .foregroundColor(.primary)
             
-            Text(title)
-                .font(.subheadline)
+            Text(subtitle)
+                .font(.caption)
                 .foregroundColor(.secondary)
         }
-        .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(16)
-        .shadow(radius: 5)
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(.ultraThinMaterial)
+                .shadow(color: gradientColors.first?.opacity(0.2) ?? .gray.opacity(0.2), radius: 10, x: 0, y: 5)
+        )
     }
 }
 
-struct MeditationCard: View {
+struct EnhancedMeditationCard: View {
     let title: String
     let duration: String
+    let description: String
     let icon: String
+    let gradientColors: [Color]
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Image(systemName: icon)
-                .font(.title)
-                .foregroundColor(.purple)
-            
-            Text(title)
-                .font(.headline)
-            
-            Text(duration)
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+        Button(action: {
+            // Meditation action
+        }) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Image(systemName: icon)
+                        .font(.title2)
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: gradientColors,
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                    
+                    Spacer()
+                    
+                    Text(duration)
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(
+                            Capsule()
+                                .fill(gradientColors.first?.opacity(0.2) ?? .gray.opacity(0.2))
+                        )
+                        .foregroundColor(gradientColors.first ?? .primary)
+                }
+                
+                Text(title)
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.primary)
+                
+                Text(description)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.leading)
+            }
+            .padding(20)
+            .frame(width: 180, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(.ultraThinMaterial)
+                    .shadow(color: gradientColors.first?.opacity(0.2) ?? .gray.opacity(0.2), radius: 8, x: 0, y: 4)
+            )
         }
-        .padding()
-        .frame(width: 160)
-        .background(Color(.systemBackground))
-        .cornerRadius(16)
-        .shadow(radius: 5)
+        .buttonStyle(PlainButtonStyle())
     }
 }
 
-struct QuickActionButton: View {
+struct EnhancedQuickActionButton: View {
     let title: String
+    let subtitle: String
     let icon: String
-    let color: Color
+    let gradientColors: [Color]
     
     var body: some View {
         Button(action: {
             // Action
         }) {
-            VStack(spacing: 8) {
+            HStack(spacing: 12) {
                 Image(systemName: icon)
-                    .font(.title)
-                Text(title)
-                    .font(.subheadline)
+                    .font(.title2)
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: gradientColors,
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
+                    
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
             }
-            .foregroundColor(color)
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(Color(.systemBackground))
-            .cornerRadius(16)
-            .shadow(radius: 5)
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(.ultraThinMaterial)
+                    .shadow(color: gradientColors.first?.opacity(0.1) ?? .gray.opacity(0.1), radius: 6, x: 0, y: 3)
+            )
         }
+        .buttonStyle(PlainButtonStyle())
     }
 }
 

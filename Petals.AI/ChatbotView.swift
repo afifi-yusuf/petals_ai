@@ -6,6 +6,26 @@ struct ChatbotView: View {
     
     var body: some View {
         VStack(spacing: 0) {
+            // Header with Logo
+            HStack {
+                Image("icon")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 40, height: 40)
+                    .clipShape(Circle())
+                    .shadow(color: .purple.opacity(0.3), radius: 4, x: 0, y: 2)
+                
+                Text("Petals.AI")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.purple)
+                
+                Spacer()
+            }
+            .padding()
+            .background(Color.white)
+            .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
+            
             // Chat messages
             ScrollViewReader { proxy in
                 ScrollView {
