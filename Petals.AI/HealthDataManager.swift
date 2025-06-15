@@ -26,7 +26,72 @@ class HealthDataManager {
             HKObjectType.categoryType(forIdentifier: .mindfulSession)!
         ]
         healthStore.requestAuthorization(toShare: typesToShare, read: typesToRead) { success, error in
-            // You can handle callback as needed
+            if success {
+                // Populate sample data after authorization
+                Task {
+                    await self.populateSampleData()
+                }
+            }
+        }
+    }
+
+    private func populateSampleData() async {
+        // Sample steps data
+        if let stepType = HKQuantityType.quantityType(forIdentifier: .stepCount) {
+            let stepsQuantity = HKQuantity(unit: HKUnit.count(), doubleValue: 8432)
+            let stepsSample = HKQuantitySample(
+                type: stepType,
+                quantity: stepsQuantity,
+                start: Calendar.current.startOfDay(for: Date()),
+                end: Date()
+            )
+            try? await healthStore.save(stepsSample)
+        }
+
+        // Sample heart rate data
+        if let heartRateType = HKQuantityType.quantityType(forIdentifier: .heartRate) {
+            let heartRateQuantity = HKQuantity(unit: HKUnit.count().unitDivided(by: .minute()), doubleValue: 72)
+            let heartRateSample = HKQuantitySample(
+                type: heartRateType,
+                quantity: heartRateQuantity,
+                start: Date().addingTimeInterval(-300), // 5 minutes ago
+                end: Date()
+            )
+            try? await healthStore.save(heartRateSample)
+        }
+
+        // Sample sleep data
+        if let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) {
+            let sleepSample = HKCategorySample(
+                type: sleepType,
+                value: HKCategoryValueSleepAnalysis.asleepUnspecified.rawValue,
+                start: Calendar.current.date(byAdding: .hour, value: -10, to: Date())!,
+                end: Date()
+            )
+            try? await healthStore.save(sleepSample)
+        }
+
+        // Sample active energy data
+        if let energyType = HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned) {
+            let energyQuantity = HKQuantity(unit: HKUnit.kilocalorie(), doubleValue: 450)
+            let energySample = HKQuantitySample(
+                type: energyType,
+                quantity: energyQuantity,
+                start: Calendar.current.startOfDay(for: Date()),
+                end: Date()
+            )
+            try? await healthStore.save(energySample)
+        }
+
+        // Sample mindfulness data
+        if let mindfulnessType = HKObjectType.categoryType(forIdentifier: .mindfulSession) {
+            let mindfulnessSample = HKCategorySample(
+                type: mindfulnessType,
+                value: HKCategoryValue.notApplicable.rawValue,
+                start: Date().addingTimeInterval(-1800), // 30 minutes ago
+                end: Date()
+            )
+            try? await healthStore.save(mindfulnessSample)
         }
     }
 
@@ -45,8 +110,9 @@ class HealthDataManager {
             summary += "• Heart rate: Error fetching data\n"
         }
         do {
-            let sleepHours = try await getSleepHours()
-            summary += "• Sleep last night: \(String(format: "%.1f", sleepHours)) hours\n"
+            let sleepHours = try await getSleepBreakdown()
+            summary += "• Sleep last night: \(String(format: "%.1f", sleepHours.total)) hours\n"
+            summary += "    ⤷ REM: \(String(format: "%.1f", sleepHours.rem))h, Deep: \(String(format: "%.1f", sleepHours.deep))h\n"
         } catch {
             summary += "• Sleep: Error fetching data\n"
         }
@@ -116,11 +182,19 @@ class HealthDataManager {
         }
     }
 
-    private func getSleepHours() async throws -> Double {
+    private func getSleepBreakdown() async throws -> (total: Double, rem: Double, deep: Double) {
         let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!
+        let calendar = Calendar.current
         let now = Date()
-        let startOfDay = Calendar.current.date(byAdding: .day, value: -1, to: now)!
-        let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: now, options: .strictStartDate)
+        let startOfDay = calendar.startOfDay(for: now)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+
+        let predicate = HKQuery.predicateForSamples(
+            withStart: startOfDay.addingTimeInterval(-18 * 3600),
+            end: endOfDay,
+            options: .strictEndDate
+        )
+
         return try await withCheckedThrowingContinuation { continuation in
             let query = HKSampleQuery(
                 sampleType: sleepType,
@@ -132,16 +206,40 @@ class HealthDataManager {
                     continuation.resume(throwing: error)
                     return
                 }
+
                 guard let sleepSamples = samples as? [HKCategorySample], !sleepSamples.isEmpty else {
-                    continuation.resume(returning: 0.0)
+                    continuation.resume(returning: (0.0, 0.0, 0.0))
                     return
                 }
-                let totalSleepTime = sleepSamples.reduce(0.0) { total, sample in
-                    total + sample.endDate.timeIntervalSince(sample.startDate)
+
+                var totalSleep: TimeInterval = 0
+                var remSleep: TimeInterval = 0
+                var deepSleep: TimeInterval = 0
+
+                for sample in sleepSamples {
+                    let duration = sample.endDate.timeIntervalSince(sample.startDate)
+                    switch sample.value {
+                    case HKCategoryValueSleepAnalysis.asleepCore.rawValue,
+                         HKCategoryValueSleepAnalysis.asleepUnspecified.rawValue:
+                        totalSleep += duration
+                    case HKCategoryValueSleepAnalysis.asleepREM.rawValue:
+                        totalSleep += duration
+                        remSleep += duration
+                    case HKCategoryValueSleepAnalysis.asleepDeep.rawValue:
+                        totalSleep += duration
+                        deepSleep += duration
+                    default:
+                        break
+                    }
                 }
-                let sleepHours = totalSleepTime / 3600
-                continuation.resume(returning: sleepHours)
+
+                continuation.resume(returning: (
+                    total: totalSleep / 3600,
+                    rem: remSleep / 3600,
+                    deep: deepSleep / 3600
+                ))
             }
+
             self.healthStore.execute(query)
         }
     }
