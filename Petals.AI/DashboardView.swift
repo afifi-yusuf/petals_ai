@@ -80,7 +80,9 @@ struct DashboardView: View {
                                 Spacer()
                                 
                                 Button(action: {
-                                    fetchHealthData()
+                                    Task {
+                                        await fetchHealthData()
+                                    }
                                 }) {
                                     Image(systemName: "arrow.clockwise")
                                         .font(.system(size: 16, weight: .medium))
@@ -199,12 +201,32 @@ struct DashboardView: View {
                                         .shadow(color: .purple.opacity(0.3), radius: 5, x: 0, y: 2)
                                     }
                                     
-                                    EnhancedQuickActionButton(
-                                        title: "Start Session",
-                                        icon: "play.fill",
-                                        color: .purple
-                                    ) {
-                                        // Start session action
+                                    Button(action: {
+                                        Task {
+                                            let summary = await HealthDataManager.shared.getHealthSummary()
+                                            print("=== Health Summary ===")
+                                            print(summary)
+                                            print("===================")
+                                        }
+                                    }) {
+                                        VStack {
+                                            Image(systemName: "heart.text.square.fill")
+                                                .font(.title2)
+                                            Text("Test Health")
+                                                .font(.caption)
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                        .padding()
+                                        .background(
+                                            LinearGradient(
+                                                colors: [.green, .mint],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            )
+                                        )
+                                        .foregroundColor(.white)
+                                        .cornerRadius(15)
+                                        .shadow(color: .green.opacity(0.3), radius: 5, x: 0, y: 2)
                                     }
                                 }
                                 
@@ -238,64 +260,22 @@ struct DashboardView: View {
             .navigationBarHidden(true)
         }
         .onAppear {
-            requestHealthKitAuthorization()
+            Task {
+                HealthDataManager.shared.requestHealthKitAuthorization()
+                await fetchHealthData()
+            }
         }
         .sheet(isPresented: $showingSubscription) {
             SubscriptionView()
         }
     }
     
-    private func requestHealthKitAuthorization() {
-        let typesToRead: Set<HKObjectType> = [
-            HKObjectType.quantityType(forIdentifier: .stepCount)!,
-            HKObjectType.quantityType(forIdentifier: .heartRate)!
-        ]
-        
-        healthStore.requestAuthorization(toShare: nil, read: typesToRead) { success, error in
-            if success {
-                fetchHealthData()
-            }
-        }
-    }
-    
-    private func fetchHealthData() {
-        // Fetch steps
-        if let stepType = HKQuantityType.quantityType(forIdentifier: .stepCount) {
-            let now = Date()
-            let startOfDay = Calendar.current.startOfDay(for: now)
-            let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: now, options: .strictStartDate)
-            
-            let query = HKStatisticsQuery(
-                quantityType: stepType,
-                quantitySamplePredicate: predicate,
-                options: .cumulativeSum
-            ) { _, result, error in
-                if let result = result,
-                   let sum = result.sumQuantity() {
-                    DispatchQueue.main.async {
-                        self.steps = sum.doubleValue(for: HKUnit.count())
-                    }
-                }
-            }
-            healthStore.execute(query)
-        }
-        
-        // Fetch heart rate
-        if let heartRateType = HKQuantityType.quantityType(forIdentifier: .heartRate) {
-            let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
-            let query = HKSampleQuery(
-                sampleType: heartRateType,
-                predicate: nil,
-                limit: 1,
-                sortDescriptors: [sortDescriptor]
-            ) { _, samples, error in
-                if let sample = samples?.first as? HKQuantitySample {
-                    DispatchQueue.main.async {
-                        self.heartRate = sample.quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
-                    }
-                }
-            }
-            healthStore.execute(query)
+    private func fetchHealthData() async {
+        do {
+            steps = try await HealthDataManager.shared.getSteps()
+            heartRate = try await HealthDataManager.shared.getHeartRate()
+        } catch {
+            print("Error fetching health data: \(error)")
         }
     }
 }

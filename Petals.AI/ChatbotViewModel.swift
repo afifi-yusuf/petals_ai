@@ -29,11 +29,20 @@ class ChatbotViewModel: ObservableObject {
     }
     
     private func initializeSession() {
-        currentSession = LanguageModelSession(instructions: """
-            You are Petals, a warm and empathetic wellness coach. Provide guidance and support to the user. 
-            Your tone should always be positive, gentle, and encouraging. 
-            Keep responses concise and focused on wellness, meditation, and mental health.
-            """)
+        Task {
+            await HealthDataManager.shared.requestHealthKitAuthorization()
+            let healthSummary = await HealthDataManager.shared.getHealthSummary()
+            currentSession = LanguageModelSession(instructions: """
+                            You are Petals, a warm and empathetic health and wellness coach. Provide personalized guidance and support to the user. 
+                            Your tone should always be positive, gentle, and encouraging. 
+                            Keep responses concise, insightful, and focused on health.
+                            Maintain a conversational tone and short responses.
+                        
+                Current health data:
+                \(healthSummary)
+                """)
+        }
+        
     }
     
     func sendMessage() {
@@ -52,7 +61,7 @@ class ChatbotViewModel: ObservableObject {
                     throw NSError(domain: "SessionError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Session not initialized"])
                 }
                 
-                let response = try await session.respond(to: Prompt(currentInput), options: GenerationOptions(temperature: 1.5))
+                let response = try await session.respond(to: Prompt(currentInput), options: GenerationOptions(temperature: 1.2))
                 let responseContent = response.content
                 await MainActor.run {
                     messages.append(ChatMessage(content: responseContent, isUser: false))
@@ -67,7 +76,7 @@ class ChatbotViewModel: ObservableObject {
                 
                 // Retry with new session
                 do {
-                    let response = try await currentSession!.respond(to: Prompt(currentInput), options: GenerationOptions(temperature: 1.5))
+                    let response = try await currentSession!.respond(to: Prompt(currentInput), options: GenerationOptions(temperature: 1.2))
                     let responseContent = response.content
                     
                     await MainActor.run {
