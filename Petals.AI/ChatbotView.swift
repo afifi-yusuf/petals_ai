@@ -1,6 +1,5 @@
 // In ChatbotView.swift
 import SwiftUI
-
 struct ChatbotView: View {
     @StateObject private var viewModel = ChatbotViewModel()
     

@@ -15,12 +15,23 @@ class ChatbotViewModel: ObservableObject {
     @Published var inputMessage: String = ""
     @Published var isLoading: Bool = false
     
+    private var currentSession: LanguageModelSession?
+    
     init() {
         // Add welcome message
         messages.append(ChatMessage(
             content: "Hello! I'm Petal, your health and wellness companion. How can I help you today?",
             isUser: false
         ))
+        
+        // Initialize session
+        initializeSession()
+    }
+    
+    private func initializeSession() {
+        currentSession = LanguageModelSession(instructions: """
+            You are a wellness and meditation coach. Provide guidance and support to the user. Keep responses concise and focused on wellness, meditation, and mental health.
+            """)
     }
     
     func sendMessage() {
@@ -34,19 +45,36 @@ class ChatbotViewModel: ObservableObject {
         isLoading = true
 
         Task {
-            if #available(iOS 26.0, *) {
+            do {
+                guard let session = currentSession else {
+                    throw NSError(domain: "SessionError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Session not initialized"])
+                }
+                
+                let response = try await session.respond(to: Prompt(currentInput))
+                let responseContent = response.content
+                await MainActor.run {
+                    messages.append(ChatMessage(content: responseContent, isUser: false))
+                    isLoading = false
+                }
+            } catch LanguageModelSession.GenerationError.exceededContextWindowSize {
+                // Handle context limit exceeded
+                print("Context window exceeded, creating new session with condensed history")
+                
+                // Create new session with condensed history
+                currentSession = createNewSessionWithHistory(previousSession: currentSession!)
+                
+                // Retry with new session
                 do {
-                    let session = LanguageModelSession(instructions: """
-                        You are a wellness and meditation coach. Provide guidance and support to the user. Keep responses concise and focused on wellness, meditation, and mental health.
-                        """)
-                    let response = try await session.respond(to: Prompt(currentInput))
+                    let response = try await currentSession!.respond(to: Prompt(currentInput))
                     let responseContent = response.content
+                    
                     await MainActor.run {
                         messages.append(ChatMessage(content: responseContent, isUser: false))
                         isLoading = false
                     }
+                    
                 } catch {
-                    print("Error: \(error)")
+                    print("Error after session reset: \(error)")
                     await MainActor.run {
                         messages.append(ChatMessage(
                             content: "Sorry, I encountered an error. Please try again.",
@@ -55,35 +83,40 @@ class ChatbotViewModel: ObservableObject {
                         isLoading = false
                     }
                 }
-            } else {
-                // Fallback for iOS versions earlier than 26.0
-                let reply = generateResponse(to: currentInput)
+                
+            } catch {
+                print("Error: \(error)")
                 await MainActor.run {
-                    messages.append(ChatMessage(content: reply, isUser: false))
+                    messages.append(ChatMessage(
+                        content: "Sorry, I encountered an error. Please try again.",
+                        isUser: false
+                    ))
                     isLoading = false
                 }
             }
         }
     }
     
-    private func generateResponse(to message: String) -> String {
-        let lowercasedMessage = message.lowercased()
+    private func createNewSessionWithHistory(previousSession: LanguageModelSession) -> LanguageModelSession {
+        let allEntries = previousSession.transcript.entries
+        var condensedEntries = [Transcript.Entry]()
         
-        if lowercasedMessage.contains("hello") || lowercasedMessage.contains("hi") {
-            return "Hello! How can I help you today?"
-        } else if lowercasedMessage.contains("meditation") {
-            return "I can help you with meditation techniques. Would you like to try a guided session?"
-        } else if lowercasedMessage.contains("stress") {
-            return "I understand you're feeling stressed. Let's try some deep breathing exercises together."
-        } else if lowercasedMessage.contains("health") {
-            return "I can help you track your health metrics and provide personalized recommendations."
-        } else if lowercasedMessage.contains("thank") {
-            return "You're welcome! Is there anything else I can help you with?"
-        } else if lowercasedMessage.contains("bye") || lowercasedMessage.contains("goodbye") {
-            return "Take care! Remember to stay hydrated and take breaks when needed."
-        } else {
-            return "I'm here to help with your health and wellness journey. What would you like to know more about?"
+        // Keep the first entry (usually system instructions)
+        if let firstEntry = allEntries.first {
+            condensedEntries.append(firstEntry)
         }
+        
+        // Keep the last few entries to maintain some context
+        let keepLastCount = min(4, allEntries.count - 1) // Keep last 4 entries (2 exchanges)
+        if keepLastCount > 0 {
+            let lastEntries = Array(allEntries.suffix(keepLastCount))
+            condensedEntries.append(contentsOf: lastEntries)
+        }
+        
+        let condensedTranscript = Transcript(entries: condensedEntries)
+        
+        // Note: transcript includes instructions
+        return LanguageModelSession(transcript: condensedTranscript)
     }
+    
 }
-
