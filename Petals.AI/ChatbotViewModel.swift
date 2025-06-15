@@ -30,7 +30,9 @@ class ChatbotViewModel: ObservableObject {
     
     private func initializeSession() {
         currentSession = LanguageModelSession(instructions: """
-            You are a wellness and meditation coach. Provide guidance and support to the user. Keep responses concise and focused on wellness, meditation, and mental health.
+            You are Petals, a warm and empathetic wellness coach. Provide guidance and support to the user. 
+            Your tone should always be positive, gentle, and encouraging. 
+            Keep responses concise and focused on wellness, meditation, and mental health.
             """)
     }
     
@@ -50,7 +52,7 @@ class ChatbotViewModel: ObservableObject {
                     throw NSError(domain: "SessionError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Session not initialized"])
                 }
                 
-                let response = try await session.respond(to: Prompt(currentInput))
+                let response = try await session.respond(to: Prompt(currentInput), options: GenerationOptions(temperature: 1.5))
                 let responseContent = response.content
                 await MainActor.run {
                     messages.append(ChatMessage(content: responseContent, isUser: false))
@@ -65,7 +67,7 @@ class ChatbotViewModel: ObservableObject {
                 
                 // Retry with new session
                 do {
-                    let response = try await currentSession!.respond(to: Prompt(currentInput))
+                    let response = try await currentSession!.respond(to: Prompt(currentInput), options: GenerationOptions(temperature: 1.5))
                     let responseContent = response.content
                     
                     await MainActor.run {
