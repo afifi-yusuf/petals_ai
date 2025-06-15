@@ -18,6 +18,8 @@ class HealthDataManager {
             HKObjectType.quantityType(forIdentifier: .activeEnergyBurned)!,
             HKObjectType.categoryType(forIdentifier: .mindfulSession)!
         ]
+        
+        #if DEBUG
         let typesToShare: Set<HKSampleType> = [
             HKObjectType.quantityType(forIdentifier: .stepCount)!,
             HKObjectType.quantityType(forIdentifier: .heartRate)!,
@@ -30,6 +32,13 @@ class HealthDataManager {
                 print("HealthKit authorization granted")
             }
         }
+        #else
+        healthStore.requestAuthorization(toShare: [], read: typesToRead) { success, error in
+            if success {
+                print("HealthKit authorization granted")
+            }
+        }
+        #endif
     }
 
     // Make this public so it can be called from the test button

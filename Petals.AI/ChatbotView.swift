@@ -2,6 +2,7 @@
 import SwiftUI
 struct ChatbotView: View {
     @StateObject private var viewModel = ChatbotViewModel()
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         VStack(spacing: 0) {
@@ -10,20 +11,26 @@ struct ChatbotView: View {
                 Image("icon")
                     .resizable()
                     .scaledToFill()
-                    .frame(width: 40, height: 40)
+                    .frame(width: 32, height: 32)
                     .clipShape(Circle())
                     .shadow(color: .purple.opacity(0.3), radius: 4, x: 0, y: 2)
                 
-                Text("Petals.AI")
-                    .font(.title2)
+                Text("Petals AI")
+                    .font(.title3)
                     .fontWeight(.bold)
-                    .foregroundColor(.purple)
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [.purple, .blue],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
                 
                 Spacer()
             }
-            .padding()
-            .background(Color.white)
-            .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+            .background(.ultraThinMaterial)
             
             // Chat messages
             ScrollViewReader { proxy in
@@ -58,20 +65,28 @@ struct ChatbotView: View {
                     }) {
                         Image(systemName: "arrow.up.circle.fill")
                             .font(.system(size: 30))
-                            .foregroundColor(.blue)
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.purple, .blue],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
                     }
                     .disabled(viewModel.inputMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isLoading)
                 }
                 .padding()
             }
-            .background(Color(.systemBackground))
+            .background(.ultraThinMaterial)
         }
         .navigationTitle("AI Assistant")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
 struct MessageBubble: View {
     let message: ChatMessage
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         HStack {
@@ -81,7 +96,22 @@ struct MessageBubble: View {
             
             Text(message.content)
                 .padding()
-                .background(message.isUser ? Color.blue : Color(.systemGray5))
+                .background(
+                    message.isUser 
+                    ? LinearGradient(
+                        colors: [.purple, .blue],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                    : LinearGradient(
+                        colors: [
+                            Color(colorScheme == .dark ? .systemGray6 : .systemGray5),
+                            Color(colorScheme == .dark ? .systemGray6 : .systemGray5)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
                 .foregroundColor(message.isUser ? .white : .primary)
                 .cornerRadius(20)
                 .frame(maxWidth: UIScreen.main.bounds.width * 0.75, alignment: message.isUser ? .trailing : .leading)
@@ -95,12 +125,13 @@ struct MessageBubble: View {
 
 struct TypingIndicator: View {
     @State private var animationOffset: CGFloat = 0
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         HStack(spacing: 4) {
             ForEach(0..<3) { index in
                 Circle()
-                    .fill(Color.gray)
+                    .fill(Color(colorScheme == .dark ? .systemGray3 : .systemGray))
                     .frame(width: 8, height: 8)
                     .offset(y: animationOffset)
                     .animation(
@@ -112,7 +143,7 @@ struct TypingIndicator: View {
             }
         }
         .padding()
-        .background(Color(.systemGray5))
+        .background(Color(colorScheme == .dark ? .systemGray6 : .systemGray5))
         .cornerRadius(20)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal)
