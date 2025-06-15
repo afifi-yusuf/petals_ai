@@ -64,6 +64,27 @@ struct DashboardView: View {
                                 }
                                 
                                 Spacer()
+                                
+                                #if DEBUG
+                                Button(action: {
+                                    Task {
+                                        await HealthDataManager.shared.populateSampleData()
+                                        await fetchHealthData()
+                                    }
+                                }) {
+                                    Text("Debug")
+                                        .font(.system(size: 10, weight: .medium))
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                        .background(Color.red.opacity(0.1))
+                                        .foregroundColor(.red)
+                                        .cornerRadius(8)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .stroke(Color.red.opacity(0.3), lineWidth: 1)
+                                        )
+                                }
+                                #endif
                             }
                             .padding(.horizontal, 24)
                             .padding(.top, 8)
@@ -202,17 +223,12 @@ struct DashboardView: View {
                                     }
                                     
                                     Button(action: {
-                                        Task {
-                                            let summary = await HealthDataManager.shared.getHealthSummary()
-                                            print("=== Health Summary ===")
-                                            print(summary)
-                                            print("===================")
-                                        }
+                                        // Start session action
                                     }) {
                                         VStack {
-                                            Image(systemName: "heart.text.square.fill")
+                                            Image(systemName: "play.fill")
                                                 .font(.title2)
-                                            Text("Test Health")
+                                            Text("Start Session")
                                                 .font(.caption)
                                         }
                                         .frame(maxWidth: .infinity)

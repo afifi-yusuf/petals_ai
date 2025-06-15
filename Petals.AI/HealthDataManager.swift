@@ -27,15 +27,14 @@ class HealthDataManager {
         ]
         healthStore.requestAuthorization(toShare: typesToShare, read: typesToRead) { success, error in
             if success {
-                // Populate sample data after authorization
-                Task {
-                    await self.populateSampleData()
-                }
+                print("HealthKit authorization granted")
             }
         }
     }
 
-    private func populateSampleData() async {
+    // Make this public so it can be called from the test button
+    #if DEBUG
+    public func populateSampleData() async {
         // Sample steps data
         if let stepType = HKQuantityType.quantityType(forIdentifier: .stepCount) {
             let stepsQuantity = HKQuantity(unit: HKUnit.count(), doubleValue: 8432)
@@ -94,6 +93,12 @@ class HealthDataManager {
             try? await healthStore.save(mindfulnessSample)
         }
     }
+    #else
+    func populateSampleData() async {
+        // This method is not available in release builds
+        print("Sample data population is not available in release builds")
+    }
+    #endif
 
     func getHealthSummary() async -> String {
         var summary = "Health Summary:\n"

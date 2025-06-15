@@ -33,7 +33,7 @@ struct Petals_AIApp: App {
     var body: some Scene {
             WindowGroup {
                 if appState.isSignedIn {
-                    DashboardView()
+                    ContentView()
                         .onOpenURL { url in
                             GIDSignIn.sharedInstance.handle(url)
                         }
