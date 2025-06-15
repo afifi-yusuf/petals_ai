@@ -36,7 +36,9 @@ class ChatbotViewModel: ObservableObject {
         Task {
             if #available(iOS 26.0, *) {
                 do {
-                    let session = LanguageModelSession()
+                    let session = LanguageModelSession(instructions: """
+                        You are a wellness and meditation coach. Provide guidance and support to the user. Keep responses concise and focused on wellness, meditation, and mental health.
+                        """)
                     let response = try await session.respond(to: Prompt(currentInput))
                     let responseContent = response.content
                     await MainActor.run {
