@@ -65,8 +65,8 @@ struct LoginView: View {
                         .frame(width: 280, height: 50)
                         .cornerRadius(25)
                         .shadow(color: .purple.opacity(0.2), radius: 8, x: 0, y: 4)
+                    SignInWithAppleView()
                 }
-                .padding(.bottom, 60)
             }
             .padding()
         }
