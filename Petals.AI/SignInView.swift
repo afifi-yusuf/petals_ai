@@ -57,7 +57,7 @@ struct LoginView: View {
                 
                 // Sign In Button
                 VStack(spacing: 16) {
-                    Text("Sign in with Google to get started")
+                    Text("Sign in with Google or Apple ID to get started")
                         .font(.headline)
                         .foregroundColor(.secondary)
                     
