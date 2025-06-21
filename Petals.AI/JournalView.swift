@@ -32,6 +32,7 @@ struct JournalView: View {
                         .cornerRadius(12)
                         .onChange(of: journalText) { _ in
                             limitTo250Words()
+                            limitTo1500Char()
                         }
 
                     HStack {
@@ -139,6 +140,10 @@ struct JournalView: View {
     func wordCount() -> Int {
         journalText.split { $0.isWhitespace || $0.isNewline }.count
     }
+    
+    func charCount() -> Int {
+        return journalText.count
+    }
 
     func limitTo250Words() {
         let words = journalText.split { $0.isWhitespace || $0.isNewline }
@@ -194,7 +199,12 @@ struct JournalView: View {
             }
         }
     }
-
+    
+    func limitTo1500Char(){
+        let charLimit = journalText.count > 1500
+        journalText = charLimit ? String(journalText.prefix(1500)) : journalText
+    }
+    
     func stopRecording() {
         audioEngine.stop()
         audioEngine.inputNode.removeTap(onBus: 0)
