@@ -95,6 +95,11 @@ struct JournalView: View {
                     .foregroundStyle(
                         LinearGradient(colors: [.purple, .blue], startPoint: .leading, endPoint: .trailing)
                     )
+                Text(Date().formatted(date: .long, time: .shortened))
+                            .font(.body)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
                 
                 Text("Reflect on your wellness journey, track your mood, and document your progress.")
                        .font(.body)
