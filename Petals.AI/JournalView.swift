@@ -9,6 +9,7 @@ struct JournalView: View {
     
     @State private var journalText: String = ""
     @State private var wordLimitReached: Bool = false
+    @State private var showingSaveSuccess = false
     
     @State private var isRecording = false
     @State private var speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
@@ -21,52 +22,179 @@ struct JournalView: View {
             backgroundGradient
             Color(.systemBackground).ignoresSafeArea()
             
-            VStack(spacing: 24) {
+            VStack(spacing: 0) {
                 header
                 
-                VStack(spacing: 16) {
-                    TextEditor(text: $journalText)
-                        .padding()
-                        .frame(minHeight: 200)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(12)
-                        .onChange(of: journalText) {
-                            limitTo250Words()
-                            limitTo1500Char()
+                ScrollView {
+                    VStack(spacing: 24) {
+                        // Journal Entry Section
+                        VStack(alignment: .leading, spacing: 16) {
+                            HStack {
+                                Text("Today's Reflection")
+                                    .font(.title2)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.primary)
+                                
+                                Spacer()
+                                
+                                // Word count indicator
+                                HStack(spacing: 4) {
+                                    Circle()
+                                        .fill(wordLimitReached ? Color.red : Color.green)
+                                        .frame(width: 8, height: 8)
+                                    Text("\(wordCount()) / 250")
+                                        .font(.caption)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(wordLimitReached ? .red : .secondary)
+                                }
+                            }
+                            
+                            // Enhanced Text Editor
+                            ZStack(alignment: .topLeading) {
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(Color(.systemGray6))
+                                    .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
+                                
+                                if journalText.isEmpty {
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        Text("How are you feeling today?")
+                                            .font(.headline)
+                                            .foregroundColor(.secondary)
+                                        Text("Share your thoughts, feelings, or any wellness insights...")
+                                            .font(.subheadline)
+                                            .foregroundColor(.secondary.opacity(0.8))
+                                    }
+                                    .padding(20)
+                                    .allowsHitTesting(false)
+                                }
+                                
+                                TextEditor(text: $journalText)
+                                    .padding(20)
+                                    .background(Color.clear)
+                                    .font(.body)
+                                    .lineSpacing(4)
+                                    .onChange(of: journalText) {
+                                        limitTo250Words()
+                                        limitTo1500Char()
+                                    }
+                            }
+                            .frame(minHeight: 200)
                         }
-
-                    HStack {
-                        Button(action: {
-                            isRecording ? stopRecording() : startRecording()
-                            isRecording.toggle()
-                        }) {
-                            Label(isRecording ? "Stop Recording" : "Start Speaking", systemImage: "mic")
-                                .padding()
-                                .background(isRecording ? Color.red.opacity(0.2) : Color.blue.opacity(0.2))
-                                .foregroundColor(.primary)
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .padding(.horizontal, 24)
+                        
+                        // Action Buttons
+                        VStack(spacing: 16) {
+                            // Voice Recording Button
+                            Button(action: {
+                                isRecording ? stopRecording() : startRecording()
+                                isRecording.toggle()
+                            }) {
+                                HStack(spacing: 12) {
+                                    Image(systemName: isRecording ? "stop.circle.fill" : "mic.circle.fill")
+                                        .font(.title2)
+                                        .foregroundColor(isRecording ? .red : .blue)
+                                    
+                                    Text(isRecording ? "Stop Recording" : "Voice to Text")
+                                        .font(.headline)
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(.primary)
+                                    
+                                    Spacer()
+                                    
+                                    if isRecording {
+                                        HStack(spacing: 4) {
+                                            ForEach(0..<3) { index in
+                                                Circle()
+                                                    .fill(Color.red)
+                                                    .frame(width: 6, height: 6)
+                                                    .scaleEffect(isRecording ? 1.2 : 0.8)
+                                                    .animation(
+                                                        Animation.easeInOut(duration: 0.6)
+                                                            .repeatForever()
+                                                            .delay(0.2 * Double(index)),
+                                                        value: isRecording
+                                                    )
+                                            }
+                                        }
+                                    }
+                                }
+                                .padding(20)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .fill(.ultraThinMaterial)
+                                        .shadow(color: isRecording ? .red.opacity(0.2) : .blue.opacity(0.2), radius: 8, x: 0, y: 4)
+                                )
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            
+                            // Save Button
+                            Button(action: saveJournal) {
+                                HStack(spacing: 12) {
+                                    Image(systemName: "bookmark.circle.fill")
+                                        .font(.title2)
+                                        .foregroundColor(.white)
+                                    
+                                    Text("Save Journal Entry")
+                                        .font(.headline)
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(.white)
+                                    
+                                    Spacer()
+                                }
+                                .padding(20)
+                                .background(
+                                    LinearGradient(
+                                        colors: [.purple, .blue],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .cornerRadius(16)
+                                .shadow(color: .purple.opacity(0.3), radius: 8, x: 0, y: 4)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            .disabled(journalText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                            .opacity(journalText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.5 : 1.0)
                         }
-
-                        if isRecording {
-                            Text("🎙️ Listening...")
-                                .font(.caption)
-                                .foregroundColor(.red)
+                        .padding(.horizontal, 24)
+                        
+                        // Wellness Tips
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack {
+                                Image(systemName: "lightbulb.fill")
+                                    .foregroundColor(.orange)
+                                    .font(.title3)
+                                Text("Journaling Tips")
+                                    .font(.headline)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.primary)
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                TipRow(icon: "heart.fill", text: "Write about your emotions and how you're feeling")
+                                TipRow(icon: "figure.walk", text: "Reflect on your physical activity and energy levels")
+                                TipRow(icon: "brain.head.profile", text: "Note any stress, anxiety, or moments of peace")
+                                TipRow(icon: "leaf.fill", text: "Document your wellness goals and progress")
+                            }
                         }
-                        Text("\(wordCount()) / 250 words")
-                            .font(.caption)
-                            .foregroundColor(wordLimitReached ? .red : .secondary)
-                        Spacer()
-                        Button("Save") {
-                            saveJournal()
-                        }
-                        .buttonStyle(.borderedProminent)
+                        .padding(20)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(.ultraThinMaterial)
+                                .shadow(color: .orange.opacity(0.1), radius: 8, x: 0, y: 4)
+                        )
+                        .padding(.horizontal, 24)
+                        
+                        Spacer(minLength: 30)
                     }
-                    .padding(.horizontal)
+                    .padding(.vertical, 24)
                 }
-                .padding(.horizontal)
-                
-                Spacer()
             }
+        }
+        .alert("Journal Saved!", isPresented: $showingSaveSuccess) {
+            Button("OK") { dismiss() }
+        } message: {
+            Text("Your wellness reflection has been saved successfully.")
         }
     }
 
@@ -88,7 +216,8 @@ struct JournalView: View {
     }
 
     var header: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 20) {
+            // Navigation Header
             HStack {
                 Button(action: { dismiss() }) {
                     HStack(spacing: 8) {
@@ -105,37 +234,36 @@ struct JournalView: View {
             .padding(.horizontal, 24)
             .padding(.top, 8)
             
-            VStack(spacing: 8) {
+            // Title Section
+            VStack(spacing: 16) {
                 Image("icon")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 60, height: 60)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .shadow(color: .purple.opacity(0.3), radius: 8, x: 0, y: 4)
+                    .frame(width: 70, height: 70)
+                    .clipShape(RoundedRectangle(cornerRadius: 18))
+                    .shadow(color: .purple.opacity(0.3), radius: 10, x: 0, y: 5)
                 
-                Text("Wellness Journal")
-                    .font(.title)
-                    .fontWeight(.bold)
-                    .foregroundStyle(
-                        LinearGradient(colors: [.purple, .blue], startPoint: .leading, endPoint: .trailing)
-    
-                    )
-                Text(Date().formatted(date: .long, time: .shortened))
-                            .font(.body)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal)
-                
-                Text("Reflect on your wellness journey, track your mood, and document your progress.")
-                       .font(.body)
-                       .foregroundColor(.secondary)
-                       .multilineTextAlignment(.center)
-                       .padding(.horizontal)
-
+                VStack(spacing: 8) {
+                    Text("Wellness Journal")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundStyle(
+                            LinearGradient(colors: [.purple, .blue], startPoint: .leading, endPoint: .trailing)
+                        )
+                    
+                    Text(Date().formatted(date: .long, time: .shortened))
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                    
+                    Text("Reflect on your wellness journey and track your progress")
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
+                }
             }
         }
     }
-    
     
     func wordCount() -> Int {
         journalText.split { $0.isWhitespace || $0.isNewline }.count
@@ -155,7 +283,6 @@ struct JournalView: View {
 
     func saveJournal() {
         guard !journalText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            print("wise")
             return
         }
         let entry = JournalLogModel(text: journalText)
@@ -163,11 +290,12 @@ struct JournalView: View {
         do {
             try modelContext.save()
             print("✅ Journal saved: \(entry.text.prefix(50))...")
-            dismiss()
-        } catch{
+            showingSaveSuccess = true
+        } catch {
             print("❌ Failed to save journal: \(error.localizedDescription)")
         }
     }
+    
     func startRecording() {
         requestPermissions()
 
@@ -189,7 +317,6 @@ struct JournalView: View {
 
         recognitionTask = speechRecognizer?.recognitionTask(with: request) { result, error in
             if let result = result {
-                // Append transcribed text to existing journalText
                 journalText = result.bestTranscription.formattedString
             }
 
@@ -226,9 +353,28 @@ struct JournalView: View {
             }
         }
     }
-
 }
 
+struct TipRow: View {
+    let icon: String
+    let text: String
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.caption)
+                .foregroundColor(.orange)
+                .frame(width: 16)
+            
+            Text(text)
+                .font(.subheadline)
+                .foregroundColor(.primary)
+                .multilineTextAlignment(.leading)
+            
+            Spacer()
+        }
+    }
+}
 
 #Preview {
     JournalView()
