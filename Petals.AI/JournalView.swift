@@ -88,13 +88,20 @@ struct JournalView: View {
                     .frame(width: 60, height: 60)
                     .clipShape(RoundedRectangle(cornerRadius: 16))
                     .shadow(color: .purple.opacity(0.3), radius: 8, x: 0, y: 4)
-
+                
                 Text("Wellness Journal")
                     .font(.title)
                     .fontWeight(.bold)
                     .foregroundStyle(
                         LinearGradient(colors: [.purple, .blue], startPoint: .leading, endPoint: .trailing)
                     )
+                
+                Text("Reflect on your wellness journey, track your mood, and document your progress.")
+                       .font(.body)
+                       .foregroundColor(.secondary)
+                       .multilineTextAlignment(.center)
+                       .padding(.horizontal)
+
             }
         }
     }
