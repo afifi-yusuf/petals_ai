@@ -27,5 +27,9 @@
 		<string>com.google</string>
 		<string>com.googleusercontent.apps</string>
 	</array>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>We use speech recognition to transcribe your voice.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>We use the microphone to record your voice.</string>
 </dict>
 </plist>
