@@ -62,7 +62,7 @@ class ChatbotViewModel: ObservableObject {
 
             ---
 
-            Overall, maintain a conversational tone with concise responses.
+            Overall, maintain a conversational tone with short and concise responses.
 
             Now respond to the user based on this health data:  
             \(healthSummary)
@@ -87,7 +87,7 @@ class ChatbotViewModel: ObservableObject {
                     throw NSError(domain: "SessionError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Session not initialized"])
                 }
                 
-                let response = try await session.respond(to: Prompt(currentInput), options: GenerationOptions(temperature: 1.2))
+                let response = try await session.respond(to: Prompt(currentInput), options: GenerationOptions(temperature: 1, maximumResponseTokens: 500))
                 let responseContent = response.content
                 await MainActor.run {
                     messages.append(ChatMessage(content: responseContent, isUser: false))

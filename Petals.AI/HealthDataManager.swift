@@ -10,6 +10,14 @@ class HealthDataManager {
 
     private init() {}
 
+    // MARK: - Data Status Structure
+    struct HealthDataStatus {
+        let value: Double
+        let hasData: Bool
+        let message: String
+        let suggestion: String?
+    }
+
     func requestHealthKitAuthorization() {
         let typesToRead: Set<HKObjectType> = [
             HKObjectType.quantityType(forIdentifier: .stepCount)!,
@@ -110,41 +118,203 @@ class HealthDataManager {
     #endif
 
     func getHealthSummary() async -> String {
-        var summary = "Health Summary:\n"
+        var summaryParts: [String] = []
+        
         do {
             let steps = try await getSteps()
-            summary += "• Steps today: \(Int(steps))\n"
+            if steps > 0 {
+                summaryParts.append("Steps: \(Int(steps))")
+            }
         } catch {
-            summary += "• Steps: Error fetching data\n"
+            // Don't add steps if there's an error
         }
+        
         do {
             let heartRate = try await getHeartRate()
-            summary += "• Current heart rate: \(Int(heartRate)) BPM\n"
+            if heartRate > 0 {
+                summaryParts.append("Heart Rate: \(Int(heartRate)) BPM")
+            }
         } catch {
-            summary += "• Heart rate: Error fetching data\n"
+            // Don't add heart rate if there's an error
         }
+        
         do {
             let sleepHours = try await getSleepBreakdown()
-            summary += "• Sleep last night: \(String(format: "%.1f", sleepHours.total)) hours\n"
-            summary += "    ⤷ REM: \(String(format: "%.1f", sleepHours.rem))h, Deep: \(String(format: "%.1f", sleepHours.deep))h\n"
+            if sleepHours.total > 0 {
+                summaryParts.append("Sleep: \(String(format: "%.1f", sleepHours.total))h")
+            }
         } catch {
-            summary += "• Sleep: Error fetching data\n"
+            // Don't add sleep if there's an error
         }
+        
         do {
             let activeEnergy = try await getActiveEnergy()
-            summary += "• Active energy burned: \(Int(activeEnergy)) kcal\n"
+            if activeEnergy > 0 {
+                summaryParts.append("Energy: \(Int(activeEnergy)) kcal")
+            }
         } catch {
-            summary += "• Active energy: Error fetching data\n"
+            // Don't add energy if there's an error
         }
+        
         do {
             let mindfulness = try await getMindfulnessMinutes()
-            summary += "• Mindfulness practice: \(mindfulness) minutes\n"
+            if mindfulness > 0 {
+                summaryParts.append("Mindfulness: \(mindfulness) min")
+            }
         } catch {
-            summary += "• Mindfulness: Error fetching data\n"
+            // Don't add mindfulness if there's an error
         }
-        return summary
+        
+        // If no data is available, return a helpful message
+        if summaryParts.isEmpty {
+            return "No health data available today. Make sure to grant permissions and wear your Apple Watch or iPhone."
+        }
+        
+        return summaryParts.joined(separator: " | ")
     }
 
+    // MARK: - Enhanced Data Methods with Status
+    func getStepsStatus() async -> HealthDataStatus {
+        do {
+            let steps = try await getSteps()
+            if steps > 0 {
+                return HealthDataStatus(
+                    value: steps,
+                    hasData: true,
+                    message: "\(Int(steps))",
+                    suggestion: nil
+                )
+            } else {
+                return HealthDataStatus(
+                    value: 0,
+                    hasData: false,
+                    message: "No data",
+                    suggestion: "Try taking a walk or wearing your Apple Watch"
+                )
+            }
+        } catch {
+            return HealthDataStatus(
+                value: 0,
+                hasData: false,
+                message: "No data",
+                suggestion: "Check HealthKit permissions"
+            )
+        }
+    }
+
+    func getHeartRateStatus() async -> HealthDataStatus {
+        do {
+            let heartRate = try await getHeartRate()
+            if heartRate > 0 {
+                return HealthDataStatus(
+                    value: heartRate,
+                    hasData: true,
+                    message: "\(Int(heartRate))",
+                    suggestion: nil
+                )
+            } else {
+                return HealthDataStatus(
+                    value: 0,
+                    hasData: false,
+                    message: "No data",
+                    suggestion: "Wear your Apple Watch to track heart rate"
+                )
+            }
+        } catch {
+            return HealthDataStatus(
+                value: 0,
+                hasData: false,
+                message: "No data",
+                suggestion: "Check HealthKit permissions"
+            )
+        }
+    }
+
+    func getMindfulnessStatus() async -> HealthDataStatus {
+        do {
+            let mindfulness = try await getMindfulnessMinutes()
+            if mindfulness > 0 {
+                return HealthDataStatus(
+                    value: Double(mindfulness),
+                    hasData: true,
+                    message: "\(mindfulness) min",
+                    suggestion: nil
+                )
+            } else {
+                return HealthDataStatus(
+                    value: 0,
+                    hasData: false,
+                    message: "No data",
+                    suggestion: "Try a 5-minute meditation session"
+                )
+            }
+        } catch {
+            return HealthDataStatus(
+                value: 0,
+                hasData: false,
+                message: "No data",
+                suggestion: "Start with a guided meditation"
+            )
+        }
+    }
+
+    func getSleepStatus() async -> HealthDataStatus {
+        do {
+            let sleepHours = try await getSleepBreakdown()
+            if sleepHours.total > 0 {
+                return HealthDataStatus(
+                    value: sleepHours.total,
+                    hasData: true,
+                    message: String(format: "%.1f h", sleepHours.total),
+                    suggestion: nil
+                )
+            } else {
+                return HealthDataStatus(
+                    value: 0,
+                    hasData: false,
+                    message: "No data",
+                    suggestion: "Wear your Apple Watch to bed"
+                )
+            }
+        } catch {
+            return HealthDataStatus(
+                value: 0,
+                hasData: false,
+                message: "No data",
+                suggestion: "Check HealthKit permissions"
+            )
+        }
+    }
+
+    func getActiveEnergyStatus() async -> HealthDataStatus {
+        do {
+            let activeEnergy = try await getActiveEnergy()
+            if activeEnergy > 0 {
+                return HealthDataStatus(
+                    value: activeEnergy,
+                    hasData: true,
+                    message: "\(Int(activeEnergy))",
+                    suggestion: nil
+                )
+            } else {
+                return HealthDataStatus(
+                    value: 0,
+                    hasData: false,
+                    message: "No data",
+                    suggestion: "Try some light exercise"
+                )
+            }
+        } catch {
+            return HealthDataStatus(
+                value: 0,
+                hasData: false,
+                message: "No data",
+                suggestion: "Check HealthKit permissions"
+            )
+        }
+    }
+
+    // MARK: - Original Methods (kept for compatibility)
     func getSteps() async throws -> Double {
         let stepsQuantityType = HKQuantityType.quantityType(forIdentifier: .stepCount)!
         let now = Date()
