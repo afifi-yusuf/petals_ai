@@ -17,6 +17,8 @@ struct DashboardView: View {
     @State private var meditationMinutes: Int = 0
     @State private var isLogoZoomed = false
     @State private var showingSubscription = false
+    @State private var showingMeditation = false
+    @State private var showingJournal = false
     
     var body: some View {
         NavigationView {
@@ -223,7 +225,7 @@ struct DashboardView: View {
                                     }
                                     
                                     Button(action: {
-                                        // Start session action
+                                        showingMeditation = true
                                     }) {
                                         VStack {
                                             Image(systemName: "play.fill")
@@ -256,11 +258,11 @@ struct DashboardView: View {
                                     }
                                     
                                     EnhancedQuickActionButton(
-                                        title: "Meditate",
-                                        icon: "moon.stars.fill",
-                                        color: .purple
+                                        title: "Journal",
+                                        icon: "book.fill",
+                                        color: .green
                                     ) {
-                                        // Meditate action
+                                        showingJournal = true
                                     }
                                 }
                             }
@@ -281,8 +283,14 @@ struct DashboardView: View {
                 await fetchHealthData()
             }
         }
-        .sheet(isPresented: $showingSubscription) {
+        .fullScreenCover(isPresented: $showingSubscription) {
             SubscriptionView()
+        }
+        .fullScreenCover(isPresented: $showingMeditation) {
+            MeditationView()
+        }
+        .fullScreenCover(isPresented: $showingJournal) {
+            JournalView()
         }
     }
     

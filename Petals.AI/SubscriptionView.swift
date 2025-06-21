@@ -24,136 +24,142 @@ struct SubscriptionView: View {
     }
     
     var body: some View {
-        NavigationView {
-            ZStack {
-                // Background gradient
-                LinearGradient(
-                    gradient: Gradient(colors: gradientColors),
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
+        ZStack {
+            // Background gradient
+            LinearGradient(
+                gradient: Gradient(colors: gradientColors),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            // Solid background overlay to prevent transparency
+            Color(.systemBackground)
                 .ignoresSafeArea()
-                
-                ScrollView {
-                    VStack(spacing: 32) {
-                        // Header
-                        VStack(spacing: 16) {
-                            Image("icon")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 80, height: 80)
-                                .clipShape(RoundedRectangle(cornerRadius: 16))
-                                .shadow(color: .purple.opacity(0.3), radius: 8, x: 0, y: 4)
-                            
-                            Text("Upgrade to Premium")
+            
+            ScrollView {
+                VStack(spacing: 32) {
+                    // Header with X button
+                    HStack {
+                        Button(action: { dismiss() }) {
+                            Image(systemName: "xmark.circle.fill")
                                 .font(.title)
-                                .fontWeight(.bold)
-                                .foregroundStyle(
-                                    LinearGradient(
-                                        colors: [.purple, .blue],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                )
-                        }
-                        .padding(.top, 40)
-                        
-                        // Features
-                        VStack(alignment: .leading, spacing: 20) {
-                            FeatureRow(icon: "heart.fill", title: "Unlimited Health Tracking", description: "Track all your health metrics")
-                            FeatureRow(icon: "brain.head.profile", title: "AI Wellness Coach", description: "Personalized guidance and insights")
-                            FeatureRow(icon: "moon.stars.fill", title: "Premium Meditations", description: "Access to all meditation sessions")
-                            FeatureRow(icon: "chart.line.uptrend.xyaxis", title: "Advanced Analytics", description: "Detailed progress tracking")
-                        }
-                        .padding(.horizontal)
-                        
-                        // Subscription Card
-                        VStack(spacing: 16) {
-                            Text("Monthly Premium")
-                                .font(.headline)
-                                .foregroundColor(.primary)
-                            
-                            Text("$8.99")
-                                .font(.system(size: 40, weight: .bold))
-                                .foregroundStyle(
-                                    LinearGradient(
-                                        colors: [.purple, .blue],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                )
-                            
-                            Text("per month")
-                                .font(.subheadline)
                                 .foregroundColor(.secondary)
-                            
-                            Button(action: {
-                                isPurchasing = true
-                                Task {
-                                    await storeManager.purchase()
-                                    isPurchasing = false
-                                }
-                            }) {
-                                HStack {
-                                    if isPurchasing {
-                                        ProgressView()
-                                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                    } else {
-                                        Text("Subscribe Now")
-                                    }
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(
-                                    LinearGradient(
-                                        colors: [.purple, .blue],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
+                        }
+                        
+                        Spacer()
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 8)
+                    
+                    // Header
+                    VStack(spacing: 16) {
+                        Image("icon")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 80, height: 80)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .shadow(color: .purple.opacity(0.3), radius: 8, x: 0, y: 4)
+                        
+                        Text("Upgrade to Premium")
+                            .font(.title)
+                            .fontWeight(.bold)
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.purple, .blue],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
                                 )
-                                .foregroundColor(.white)
-                                .cornerRadius(25)
-                                .shadow(color: .purple.opacity(0.3), radius: 8, x: 0, y: 4)
+                            )
+                    }
+                    .padding(.top, 20)
+                    
+                    // Features
+                    VStack(alignment: .leading, spacing: 20) {
+                        FeatureRow(icon: "heart.fill", title: "Unlimited Health Tracking", description: "Track all your health metrics")
+                        FeatureRow(icon: "brain.head.profile", title: "AI Wellness Coach", description: "Personalized guidance and insights")
+                        FeatureRow(icon: "moon.stars.fill", title: "Premium Meditations", description: "Access to all meditation sessions")
+                        FeatureRow(icon: "chart.line.uptrend.xyaxis", title: "Advanced Analytics", description: "Detailed progress tracking")
+                    }
+                    .padding(.horizontal)
+                    
+                    // Subscription Card
+                    VStack(spacing: 16) {
+                        Text("Monthly Premium")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                        
+                        Text("$8.99")
+                            .font(.system(size: 40, weight: .bold))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.purple, .blue],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                        
+                        Text("per month")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        
+                        Button(action: {
+                            isPurchasing = true
+                            Task {
+                                await storeManager.purchase()
+                                isPurchasing = false
                             }
-                            .disabled(isPurchasing)
-                            
-                            Text("Cancel anytime")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                        .padding()
-                        .background(
-                            RoundedRectangle(cornerRadius: 20)
-                                .fill(Color(.secondarySystemBackground))
-                                .shadow(color: Color.purple.opacity(colorScheme == .dark ? 0.4 : 0.2), radius: 10, x: 0, y: 5)
-                        )
-                        .padding(.horizontal)
-                        
-                        // Terms
-                        VStack(spacing: 8) {
-                            Text("By subscribing, you agree to our")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            
-                            HStack(spacing: 4) {
-                                Link("Terms of Service", destination: URL(string: "https://petals.ai/terms")!)
-                                Text("and")
-                                Link("Privacy Policy", destination: URL(string: "https://petals.ai/privacy")!)
+                        }) {
+                            HStack {
+                                if isPurchasing {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                } else {
+                                    Text("Subscribe Now")
+                                }
                             }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(
+                                LinearGradient(
+                                    colors: [.purple, .blue],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .foregroundColor(.white)
+                            .cornerRadius(25)
+                            .shadow(color: .purple.opacity(0.3), radius: 8, x: 0, y: 4)
+                        }
+                        .disabled(isPurchasing)
+                        
+                        Text("Cancel anytime")
                             .font(.caption)
-                            .foregroundColor(.purple)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(Color(.secondarySystemBackground))
+                            .shadow(color: Color.purple.opacity(colorScheme == .dark ? 0.4 : 0.2), radius: 10, x: 0, y: 5)
+                    )
+                    .padding(.horizontal)
+                    
+                    // Terms
+                    VStack(spacing: 8) {
+                        Text("By subscribing, you agree to our")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        HStack(spacing: 4) {
+                            Link("Terms of Service", destination: URL(string: "https://petals.ai/terms")!)
+                            Text("and")
+                            Link("Privacy Policy", destination: URL(string: "https://petals.ai/privacy")!)
                         }
-                        .padding(.bottom, 40)
+                        .font(.caption)
+                        .foregroundColor(.purple)
                     }
-                }
-            }
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "xmark")
-                            .foregroundColor(.purple)
-                    }
+                    .padding(.bottom, 40)
                 }
             }
         }
