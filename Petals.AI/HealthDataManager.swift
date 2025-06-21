@@ -165,6 +165,18 @@ class HealthDataManager {
             // Don't add mindfulness if there's an error
         }
         
+        // Add Screen Time to health summary
+        let screenTimeStatus = await ScreenTimeManager.shared.getScreenTimeStatus()
+        if screenTimeStatus.hasData {
+            let hours = screenTimeStatus.value / 3600
+            if hours >= 1 {
+                summaryParts.append("Screen Time: \(String(format: "%.1f", hours))h")
+            } else {
+                let minutes = Int(screenTimeStatus.value / 60)
+                summaryParts.append("Screen Time: \(minutes) min")
+            }
+        }
+        
         // If no data is available, return a helpful message
         if summaryParts.isEmpty {
             return "No health data available today. Make sure to grant permissions and wear your Apple Watch or iPhone."

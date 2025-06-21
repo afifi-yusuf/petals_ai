@@ -280,11 +280,17 @@ struct MeditationView: View {
             The script must adhere to these constraints:
             - **Word Count:** The script must be between **560 and 590 words**. This is critical for timing.
             - **Tone:** Gentle, calming, and supportive.
-            - **Personalization:** Based on the user's current mood and health data.
+            - **Personalization:** Based on the user's current mood and comprehensive wellness data.
 
             **User's Data:**
             - Health Summary: \(healthSummary)
             - Current Mood: \(todaysMood.title) - \(todaysMood.description)
+
+            **Special Instructions:**
+            - If the user has high screen time, acknowledge this and suggest taking a digital break
+            - If they've been active, acknowledge their physical activity
+            - If they have low screen time, celebrate their digital wellness
+            - Always tie the context back to finding inner peace and mindfulness
 
             Now, provide the complete meditation script text.
             """)

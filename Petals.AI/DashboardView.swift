@@ -9,6 +9,7 @@
 import SwiftUI
 import SwiftData
 import HealthKit
+import FamilyControls
 
 struct DashboardView: View {
     @State private var healthStore = HKHealthStore()
@@ -17,10 +18,12 @@ struct DashboardView: View {
     @State private var mindfulnessStatus: HealthDataManager.HealthDataStatus?
     @State private var sleepStatus: HealthDataManager.HealthDataStatus?
     @State private var activeEnergyStatus: HealthDataManager.HealthDataStatus?
+    @State private var screenTimeStatus: HealthDataManager.HealthDataStatus?
     @State private var isLogoZoomed = false
     @State private var showingSubscription = false
     @State private var showingMeditation = false
     @State private var showingJournal = false
+    @StateObject private var screenTimeManager = ScreenTimeManager.shared
     
     var body: some View {
         NavigationView {
@@ -97,7 +100,7 @@ struct DashboardView: View {
                         // Health Stats Section
                         VStack(alignment: .leading, spacing: 16) {
                             HStack {
-                                Text("Today's Health")
+                                Text("Today's Wellness")
                                     .font(.title2)
                                     .fontWeight(.semibold)
                                     .foregroundColor(.primary)
@@ -151,6 +154,16 @@ struct DashboardView: View {
                                 )
                                 
                                 EnhancedHealthStatCard(
+                                    title: "Screen Time",
+                                    value: screenTimeStatus?.message ?? "Loading...",
+                                    subtitle: screenTimeStatus?.hasData == true ? "today" : (screenTimeStatus?.suggestion ?? ""),
+                                    icon: "iphone",
+                                    gradientColors: [.orange, .yellow],
+                                    progress: screenTimeStatus?.hasData == true ? min(screenTimeStatus!.value / (8 * 3600), 1.0) : 0.0,
+                                    hasData: screenTimeStatus?.hasData ?? false
+                                )
+                                
+                                EnhancedHealthStatCard(
                                     title: "Sleep",
                                     value: sleepStatus?.message ?? "Loading...",
                                     subtitle: sleepStatus?.hasData == true ? "last night" : (sleepStatus?.suggestion ?? ""),
@@ -159,67 +172,56 @@ struct DashboardView: View {
                                     progress: sleepStatus?.hasData == true ? min(sleepStatus!.value / 8, 1.0) : 0.0,
                                     hasData: sleepStatus?.hasData ?? false
                                 )
+                                
+                                EnhancedHealthStatCard(
+                                    title: "Energy",
+                                    value: activeEnergyStatus?.message ?? "Loading...",
+                                    subtitle: activeEnergyStatus?.hasData == true ? "kcal" : (activeEnergyStatus?.suggestion ?? ""),
+                                    icon: "flame.fill",
+                                    gradientColors: [.red, .orange],
+                                    progress: activeEnergyStatus?.hasData == true ? min(activeEnergyStatus!.value / 500, 1.0) : 0.0,
+                                    hasData: activeEnergyStatus?.hasData ?? false
+                                )
                             }
                             .padding(.horizontal, 24)
                         }
                         
-                        // Meditation Section
-                        VStack(alignment: .leading, spacing: 16) {
-                            HStack {
-                                Text("Meditation Sessions")
+                        // Digital Wellness Insights
+                        if screenTimeManager.isAuthorized && screenTimeStatus?.hasData == true {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Digital Wellness")
                                     .font(.title2)
                                     .fontWeight(.semibold)
                                     .foregroundColor(.primary)
+                                    .padding(.horizontal, 24)
                                 
-                                Spacer()
-                                
-                                Text("Choose your practice")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                            .padding(.horizontal, 24)
-                            
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 16) {
-                                    EnhancedMeditationCard(
-                                        title: "Mindful Breathing",
-                                        duration: "5 min",
-                                        description: "Focus on your breath",
-                                        icon: "wind",
-                                        gradientColors: [.mint, .green]
-                                    )
-                                    
-                                    EnhancedMeditationCard(
-                                        title: "Body Scan",
-                                        duration: "10 min",
-                                        description: "Relax your body",
-                                        icon: "figure.stand",
-                                        gradientColors: [.orange, .yellow]
-                                    )
-                                    
-                                    EnhancedMeditationCard(
-                                        title: "Stress Relief",
-                                        duration: "15 min",
-                                        description: "Find inner peace",
-                                        icon: "leaf",
-                                        gradientColors: [.purple, .indigo]
-                                    )
-                                    
-                                    EnhancedMeditationCard(
-                                        title: "Sleep Meditation",
-                                        duration: "20 min",
-                                        description: "Prepare for rest",
-                                        icon: "moon.stars",
-                                        gradientColors: [.indigo, .purple]
-                                    )
+                                VStack(spacing: 8) {
+                                    ForEach(screenTimeManager.getDigitalWellnessInsights(), id: \.self) { insight in
+                                        HStack {
+                                            Image(systemName: "lightbulb.fill")
+                                                .foregroundColor(.orange)
+                                                .font(.caption)
+                                            Text(insight)
+                                                .font(.subheadline)
+                                                .foregroundColor(.primary)
+                                            Spacer()
+                                        }
+                                        .padding(.horizontal, 24)
+                                    }
                                 }
+                                .padding(.vertical, 12)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .fill(.ultraThinMaterial)
+                                        .shadow(color: .orange.opacity(0.1), radius: 8, x: 0, y: 4)
+                                )
                                 .padding(.horizontal, 24)
                             }
                         }
                         
-                        // Quick Actions
+                        // Wellness Features
                         VStack(alignment: .leading, spacing: 16) {
-                            Text("Quick Actions")
+                            Text("Wellness Features")
                                 .font(.title2)
                                 .fontWeight(.bold)
                                 .foregroundColor(.primary)
@@ -287,6 +289,18 @@ struct DashboardView: View {
         .fullScreenCover(isPresented: $showingJournal) {
             JournalView()
         }
+        .alert("Screen Time Access", isPresented: $screenTimeManager.showingAuthorizationRequest) {
+            Button("Grant Access") {
+                Task {
+                    await screenTimeManager.requestAuthorization()
+                }
+            }
+            Button("Not Now", role: .cancel) {
+                screenTimeManager.showingAuthorizationRequest = false
+            }
+        } message: {
+            Text("Petals.AI would like to access your Screen Time data to provide personalized digital wellness insights and suggest mindful breaks.")
+        }
     }
     
     private func fetchHealthData() async {
@@ -295,6 +309,12 @@ struct DashboardView: View {
         mindfulnessStatus = await HealthDataManager.shared.getMindfulnessStatus()
         sleepStatus = await HealthDataManager.shared.getSleepStatus()
         activeEnergyStatus = await HealthDataManager.shared.getActiveEnergyStatus()
+        screenTimeStatus = await screenTimeManager.getScreenTimeStatus()
+        
+        // Request Screen Time authorization if not already granted
+        if !screenTimeManager.isAuthorized {
+            screenTimeManager.showingAuthorizationRequest = true
+        }
     }
 }
 
