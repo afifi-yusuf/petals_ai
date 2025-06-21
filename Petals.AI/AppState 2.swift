@@ -8,5 +8,5 @@ import Foundation
 import Combine
 
 class AppState: ObservableObject {
-    @Published var isSignedIn: Bool = false
+    @Published var isSignedIn: Bool = true
 }
