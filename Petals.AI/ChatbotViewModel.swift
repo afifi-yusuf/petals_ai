@@ -32,6 +32,7 @@ class ChatbotViewModel: ObservableObject {
         Task {
             await HealthDataManager.shared.requestHealthKitAuthorization()
             let healthSummary = await HealthDataManager.shared.getHealthSummary()
+            guard let todaysMood = moodManager.todaysMood else { return }
             
             currentSession = LanguageModelSession(instructions: """
             You are **Petal**, a kind and emotionally intelligent health coach. You help users reflect on their physical and mental health using their data — like sleep, steps, heart rate, stress, and digital wellness — and guide them with clear, supportive insight.
@@ -71,8 +72,9 @@ class ChatbotViewModel: ObservableObject {
 
             Overall, maintain a conversational tone with short and concise responses.
 
-            Now respond to the user based on this wellness data:  
-            \(healthSummary)
+            **User's Data:**
+            - Health Summary: \(healthSummary)
+            - Current Mood: \(todaysMood.title) - \(todaysMood.description)
             """)
         }
         
