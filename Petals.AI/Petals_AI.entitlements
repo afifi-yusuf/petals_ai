@@ -14,5 +14,9 @@
 	</array>
 	<key>com.apple.developer.healthkit.background-delivery</key>
 	<true/>
+	<key>com.apple.developer.on-device-inference</key>
+	<true/>
+	<key>com.apple.developer.family-controls</key>
+	<true/>
 </dict>
 </plist>

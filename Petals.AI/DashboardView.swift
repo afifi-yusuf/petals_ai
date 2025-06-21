@@ -9,16 +9,21 @@
 import SwiftUI
 import SwiftData
 import HealthKit
+import FamilyControls
 
 struct DashboardView: View {
     @State private var healthStore = HKHealthStore()
-    @State private var steps: Double = 0
-    @State private var heartRate: Double = 0
-    @State private var meditationMinutes: Int = 0
+    @State private var stepsStatus: HealthDataManager.HealthDataStatus?
+    @State private var heartRateStatus: HealthDataManager.HealthDataStatus?
+    @State private var mindfulnessStatus: HealthDataManager.HealthDataStatus?
+    @State private var sleepStatus: HealthDataManager.HealthDataStatus?
+    @State private var activeEnergyStatus: HealthDataManager.HealthDataStatus?
+    @State private var screenTimeStatus: HealthDataManager.HealthDataStatus?
     @State private var isLogoZoomed = false
     @State private var showingSubscription = false
     @State private var showingMeditation = false
     @State private var showingJournal = false
+    @StateObject private var screenTimeManager = ScreenTimeManager.shared
     
     var body: some View {
         NavigationView {
@@ -95,7 +100,7 @@ struct DashboardView: View {
                         // Health Stats Section
                         VStack(alignment: .leading, spacing: 16) {
                             HStack {
-                                Text("Today's Health")
+                                Text("Today's Wellness")
                                     .font(.title2)
                                     .fontWeight(.semibold)
                                     .foregroundColor(.primary)
@@ -120,150 +125,142 @@ struct DashboardView: View {
                             ], spacing: 16) {
                                 EnhancedHealthStatCard(
                                     title: "Steps",
-                                    value: "\(Int(steps))",
-                                    subtitle: "steps today",
+                                    value: stepsStatus?.message ?? "Loading...",
+                                    subtitle: stepsStatus?.hasData == true ? "steps today" : (stepsStatus?.suggestion ?? ""),
                                     icon: "figure.walk",
                                     gradientColors: [.blue, .cyan],
-                                    progress: min(steps / 10000, 1.0)
+                                    progress: stepsStatus?.hasData == true ? min(stepsStatus!.value / 10000, 1.0) : 0.0,
+                                    hasData: stepsStatus?.hasData ?? false
                                 )
                                 
                                 EnhancedHealthStatCard(
                                     title: "Heart Rate",
-                                    value: "\(Int(heartRate))",
-                                    subtitle: "BPM",
+                                    value: heartRateStatus?.message ?? "Loading...",
+                                    subtitle: heartRateStatus?.hasData == true ? "BPM" : (heartRateStatus?.suggestion ?? ""),
                                     icon: "heart.fill",
                                     gradientColors: [.red, .pink],
-                                    progress: 0.75
+                                    progress: heartRateStatus?.hasData == true ? 0.75 : 0.0,
+                                    hasData: heartRateStatus?.hasData ?? false
+                                )
+                                
+                                EnhancedHealthStatCard(
+                                    title: "Mindfulness",
+                                    value: mindfulnessStatus?.message ?? "Loading...",
+                                    subtitle: mindfulnessStatus?.hasData == true ? "today" : (mindfulnessStatus?.suggestion ?? ""),
+                                    icon: "brain.head.profile",
+                                    gradientColors: [.mint, .green],
+                                    progress: mindfulnessStatus?.hasData == true ? min(mindfulnessStatus!.value / 30, 1.0) : 0.0,
+                                    hasData: mindfulnessStatus?.hasData ?? false
+                                )
+                                
+                                EnhancedHealthStatCard(
+                                    title: "Screen Time",
+                                    value: screenTimeStatus?.message ?? "Loading...",
+                                    subtitle: screenTimeStatus?.hasData == true ? "today" : (screenTimeStatus?.suggestion ?? ""),
+                                    icon: "iphone",
+                                    gradientColors: [.orange, .yellow],
+                                    progress: screenTimeStatus?.hasData == true ? min(screenTimeStatus!.value / (8 * 3600), 1.0) : 0.0,
+                                    hasData: screenTimeStatus?.hasData ?? false
+                                )
+                                
+                                EnhancedHealthStatCard(
+                                    title: "Sleep",
+                                    value: sleepStatus?.message ?? "Loading...",
+                                    subtitle: sleepStatus?.hasData == true ? "last night" : (sleepStatus?.suggestion ?? ""),
+                                    icon: "bed.double.fill",
+                                    gradientColors: [.indigo, .purple],
+                                    progress: sleepStatus?.hasData == true ? min(sleepStatus!.value / 8, 1.0) : 0.0,
+                                    hasData: sleepStatus?.hasData ?? false
+                                )
+                                
+                                EnhancedHealthStatCard(
+                                    title: "Energy",
+                                    value: activeEnergyStatus?.message ?? "Loading...",
+                                    subtitle: activeEnergyStatus?.hasData == true ? "kcal" : (activeEnergyStatus?.suggestion ?? ""),
+                                    icon: "flame.fill",
+                                    gradientColors: [.red, .orange],
+                                    progress: activeEnergyStatus?.hasData == true ? min(activeEnergyStatus!.value / 500, 1.0) : 0.0,
+                                    hasData: activeEnergyStatus?.hasData ?? false
                                 )
                             }
                             .padding(.horizontal, 24)
                         }
                         
-                        // Meditation Section
-                        VStack(alignment: .leading, spacing: 16) {
-                            HStack {
-                                Text("Meditation Sessions")
+                        // Digital Wellness Insights
+                        if screenTimeManager.isAuthorized && screenTimeStatus?.hasData == true {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Digital Wellness")
                                     .font(.title2)
                                     .fontWeight(.semibold)
                                     .foregroundColor(.primary)
+                                    .padding(.horizontal, 24)
                                 
-                                Spacer()
-                                
-                                Text("Choose your practice")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                            .padding(.horizontal, 24)
-                            
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 16) {
-                                    EnhancedMeditationCard(
-                                        title: "Mindful Breathing",
-                                        duration: "5 min",
-                                        description: "Focus on your breath",
-                                        icon: "wind",
-                                        gradientColors: [.mint, .green]
-                                    )
-                                    
-                                    EnhancedMeditationCard(
-                                        title: "Body Scan",
-                                        duration: "10 min",
-                                        description: "Relax your body",
-                                        icon: "figure.stand",
-                                        gradientColors: [.orange, .yellow]
-                                    )
-                                    
-                                    EnhancedMeditationCard(
-                                        title: "Stress Relief",
-                                        duration: "15 min",
-                                        description: "Find inner peace",
-                                        icon: "leaf",
-                                        gradientColors: [.purple, .indigo]
-                                    )
-                                    
-                                    EnhancedMeditationCard(
-                                        title: "Sleep Meditation",
-                                        duration: "20 min",
-                                        description: "Prepare for rest",
-                                        icon: "moon.stars",
-                                        gradientColors: [.indigo, .purple]
-                                    )
+                                VStack(spacing: 8) {
+                                    ForEach(screenTimeManager.getDigitalWellnessInsights(), id: \.self) { insight in
+                                        HStack {
+                                            Image(systemName: "lightbulb.fill")
+                                                .foregroundColor(.orange)
+                                                .font(.caption)
+                                            Text(insight)
+                                                .font(.subheadline)
+                                                .foregroundColor(.primary)
+                                            Spacer()
+                                        }
+                                        .padding(.horizontal, 24)
+                                    }
                                 }
+                                .padding(.vertical, 12)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .fill(.ultraThinMaterial)
+                                        .shadow(color: .orange.opacity(0.1), radius: 8, x: 0, y: 4)
+                                )
                                 .padding(.horizontal, 24)
                             }
                         }
                         
-                        // Quick Actions
+                        // Wellness Features
                         VStack(alignment: .leading, spacing: 16) {
-                            Text("Quick Actions")
+                            Text("Wellness Features")
                                 .font(.title2)
                                 .fontWeight(.bold)
-                                .foregroundColor(.purple)
+                                .foregroundColor(.primary)
                                 .padding(.horizontal, 24)
                             
-                            VStack(spacing: 12) {
-                                HStack(spacing: 12) {
-                                    Button(action: { showingSubscription = true }) {
-                                        VStack {
-                                            Image(systemName: "star.fill")
-                                                .font(.title2)
-                                            Text("Upgrade")
-                                                .font(.caption)
-                                        }
-                                        .frame(maxWidth: .infinity)
-                                        .padding()
-                                        .background(
-                                            LinearGradient(
-                                                colors: [.purple, .blue],
-                                                startPoint: .topLeading,
-                                                endPoint: .bottomTrailing
-                                            )
-                                        )
-                                        .foregroundColor(.white)
-                                        .cornerRadius(15)
-                                        .shadow(color: .purple.opacity(0.3), radius: 5, x: 0, y: 2)
-                                    }
-                                    
-                                    Button(action: {
-                                        showingMeditation = true
-                                    }) {
-                                        VStack {
-                                            Image(systemName: "play.fill")
-                                                .font(.title2)
-                                            Text("Start Session")
-                                                .font(.caption)
-                                        }
-                                        .frame(maxWidth: .infinity)
-                                        .padding()
-                                        .background(
-                                            LinearGradient(
-                                                colors: [.green, .mint],
-                                                startPoint: .topLeading,
-                                                endPoint: .bottomTrailing
-                                            )
-                                        )
-                                        .foregroundColor(.white)
-                                        .cornerRadius(15)
-                                        .shadow(color: .green.opacity(0.3), radius: 5, x: 0, y: 2)
-                                    }
+                            LazyVGrid(columns: [
+                                GridItem(.flexible()),
+                                GridItem(.flexible())
+                            ], spacing: 16) {
+                                EnhancedQuickActionButton(
+                                    title: "Start Meditation",
+                                    icon: "brain.head.profile",
+                                    color: .purple
+                                ) {
+                                    showingMeditation = true
                                 }
                                 
-                                HStack(spacing: 12) {
-                                    EnhancedQuickActionButton(
-                                        title: "View Health",
-                                        icon: "heart.fill",
-                                        color: .purple
-                                    ) {
-                                        // View health action
-                                    }
-                                    
-                                    EnhancedQuickActionButton(
-                                        title: "Journal",
-                                        icon: "book.fill",
-                                        color: .green
-                                    ) {
-                                        showingJournal = true
-                                    }
+                                EnhancedQuickActionButton(
+                                    title: "Journal Entry",
+                                    icon: "book.fill",
+                                    color: .blue
+                                ) {
+                                    showingJournal = true
+                                }
+                                
+                                EnhancedQuickActionButton(
+                                    title: "Chat with AI",
+                                    icon: "message.fill",
+                                    color: .green
+                                ) {
+                                    // Chat action
+                                }
+                                
+                                EnhancedQuickActionButton(
+                                    title: "Subscription",
+                                    icon: "crown.fill",
+                                    color: .orange
+                                ) {
+                                    showingSubscription = true
                                 }
                             }
                             .padding(.horizontal, 24)
@@ -292,14 +289,31 @@ struct DashboardView: View {
         .fullScreenCover(isPresented: $showingJournal) {
             JournalView()
         }
+        .alert("Screen Time Access", isPresented: $screenTimeManager.showingAuthorizationRequest) {
+            Button("Grant Access") {
+                Task {
+                    await screenTimeManager.requestAuthorization()
+                }
+            }
+            Button("Not Now", role: .cancel) {
+                screenTimeManager.showingAuthorizationRequest = false
+            }
+        } message: {
+            Text("Petals.AI would like to access your Screen Time data to provide personalized digital wellness insights and suggest mindful breaks.")
+        }
     }
     
     private func fetchHealthData() async {
-        do {
-            steps = try await HealthDataManager.shared.getSteps()
-            heartRate = try await HealthDataManager.shared.getHeartRate()
-        } catch {
-            print("Error fetching health data: \(error)")
+        stepsStatus = await HealthDataManager.shared.getStepsStatus()
+        heartRateStatus = await HealthDataManager.shared.getHeartRateStatus()
+        mindfulnessStatus = await HealthDataManager.shared.getMindfulnessStatus()
+        sleepStatus = await HealthDataManager.shared.getSleepStatus()
+        activeEnergyStatus = await HealthDataManager.shared.getActiveEnergyStatus()
+        screenTimeStatus = await screenTimeManager.getScreenTimeStatus()
+        
+        // Request Screen Time authorization if not already granted
+        if !screenTimeManager.isAuthorized {
+            screenTimeManager.showingAuthorizationRequest = true
         }
     }
 }
@@ -313,6 +327,7 @@ struct EnhancedHealthStatCard: View {
     let icon: String
     let gradientColors: [Color]
     let progress: Double
+    let hasData: Bool
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -321,7 +336,7 @@ struct EnhancedHealthStatCard: View {
                     .font(.title2)
                     .foregroundStyle(
                         LinearGradient(
-                            colors: gradientColors,
+                            colors: hasData ? gradientColors : [.gray, .gray.opacity(0.5)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
@@ -330,14 +345,14 @@ struct EnhancedHealthStatCard: View {
                 
                 // Progress indicator
                 Circle()
-                    .stroke(gradientColors.first?.opacity(0.2) ?? .gray.opacity(0.2), lineWidth: 3)
+                    .stroke(hasData ? (gradientColors.first?.opacity(0.2) ?? .gray.opacity(0.2)) : .gray.opacity(0.1), lineWidth: 3)
                     .frame(width: 24, height: 24)
                     .overlay(
                         Circle()
                             .trim(from: 0, to: progress)
                             .stroke(
                                 LinearGradient(
-                                    colors: gradientColors,
+                                    colors: hasData ? gradientColors : [.gray, .gray.opacity(0.5)],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 ),
@@ -350,17 +365,18 @@ struct EnhancedHealthStatCard: View {
             Text(value)
                 .font(.title)
                 .fontWeight(.bold)
-                .foregroundColor(.primary)
+                .foregroundColor(hasData ? .primary : .secondary)
             
             Text(subtitle)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(hasData ? .secondary : .orange)
+                .multilineTextAlignment(.leading)
         }
         .padding(20)
         .background(
             RoundedRectangle(cornerRadius: 20)
                 .fill(.ultraThinMaterial)
-                .shadow(color: gradientColors.first?.opacity(0.2) ?? .gray.opacity(0.2), radius: 10, x: 0, y: 5)
+                .shadow(color: hasData ? (gradientColors.first?.opacity(0.2) ?? .gray.opacity(0.2)) : .gray.opacity(0.1), radius: 10, x: 0, y: 5)
         )
     }
 }

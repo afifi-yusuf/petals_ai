@@ -8,6 +8,8 @@
 	<string>Petals.AI needs access to your health data to provide personalized insights and track your wellness journey.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Petals.AI needs permission to update your health data for meditation and wellness tracking.</string>
+	<key>NSFamilyControlsUsageDescription</key>
+	<string>Petals.AI uses Screen Time data to help you understand your digital wellness and suggest mindful breaks.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

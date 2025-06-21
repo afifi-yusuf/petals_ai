@@ -12,11 +12,14 @@ import GoogleSignIn
 @main
 struct Petals_AIApp: App {
     @StateObject var appState = AppState()
+    @StateObject var moodManager = MoodManager.shared
+    
     init() {
-            GIDSignIn.sharedInstance.configuration = GIDConfiguration(
-                clientID: "207124569970-gv87n0tk65h2klrip5f22umhi8f3bk7g.apps.googleusercontent.com"
-            )
-        }
+        GIDSignIn.sharedInstance.configuration = GIDConfiguration(
+            clientID: "207124569970-gv87n0tk65h2klrip5f22umhi8f3bk7g.apps.googleusercontent.com"
+        )
+    }
+    
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Item.self,
@@ -31,20 +34,24 @@ struct Petals_AIApp: App {
     }()
 
     var body: some Scene {
-            WindowGroup {
-                if appState.isSignedIn {
-                    ContentView()
-                        .onOpenURL { url in
-                            GIDSignIn.sharedInstance.handle(url)
-                        }
-                        .environmentObject(appState)
-                } else {
-                    LoginView()
-                        .onOpenURL { url in
-                            GIDSignIn.sharedInstance.handle(url)
-                        }
-                        .environmentObject(appState)
-                }
+        WindowGroup {
+            if appState.isSignedIn {
+                ContentView()
+                    .onOpenURL { url in
+                        GIDSignIn.sharedInstance.handle(url)
+                    }
+                    .environmentObject(appState)
+                    .environmentObject(moodManager)
+                    .fullScreenCover(isPresented: $moodManager.showingMoodPrompt) {
+                        DailyMoodPromptView()
+                    }
+            } else {
+                LoginView()
+                    .onOpenURL { url in
+                        GIDSignIn.sharedInstance.handle(url)
+                    }
+                    .environmentObject(appState)
             }
         }
+    }
 }
