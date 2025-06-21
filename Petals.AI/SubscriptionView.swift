@@ -3,19 +3,32 @@ import StoreKit
 
 struct SubscriptionView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) var colorScheme
     @StateObject private var storeManager = StoreManager()
     @State private var isPurchasing = false
+    
+    private var gradientColors: [Color] {
+        if colorScheme == .dark {
+            return [
+                Color.purple.opacity(0.4),
+                Color.blue.opacity(0.2),
+                Color(.systemBackground)
+            ]
+        } else {
+            return [
+                Color.purple.opacity(0.1),
+                Color.blue.opacity(0.05),
+                Color.white
+            ]
+        }
+    }
     
     var body: some View {
         NavigationView {
             ZStack {
                 // Background gradient
                 LinearGradient(
-                    gradient: Gradient(colors: [
-                        Color.purple.opacity(0.1),
-                        Color.blue.opacity(0.05),
-                        Color.white
-                    ]),
+                    gradient: Gradient(colors: gradientColors),
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
@@ -111,8 +124,8 @@ struct SubscriptionView: View {
                         .padding()
                         .background(
                             RoundedRectangle(cornerRadius: 20)
-                                .fill(.ultraThinMaterial)
-                                .shadow(color: .purple.opacity(0.2), radius: 10, x: 0, y: 5)
+                                .fill(Color(.secondarySystemBackground))
+                                .shadow(color: Color.purple.opacity(colorScheme == .dark ? 0.4 : 0.2), radius: 10, x: 0, y: 5)
                         )
                         .padding(.horizontal)
                         
@@ -229,4 +242,10 @@ class StoreManager: ObservableObject {
 
 #Preview {
     SubscriptionView()
-} 
+}
+
+#Preview("Dark Mode") {
+    SubscriptionView()
+        .preferredColorScheme(.dark)
+}
+
