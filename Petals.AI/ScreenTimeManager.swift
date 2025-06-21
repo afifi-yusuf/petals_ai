@@ -29,7 +29,7 @@ class ScreenTimeManager: ObservableObject {
     
     func checkAuthorizationStatus() {
         Task {
-            let status = await center.authorizationStatus
+            let status = center.authorizationStatus
             await MainActor.run {
                 self.isAuthorized = status == .approved
             }
