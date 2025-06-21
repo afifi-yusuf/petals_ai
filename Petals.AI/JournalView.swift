@@ -30,7 +30,7 @@ struct JournalView: View {
                         .frame(minHeight: 200)
                         .background(Color(.systemGray6))
                         .cornerRadius(12)
-                        .onChange(of: journalText) { _ in
+                        .onChange(of: journalText) {
                             limitTo250Words()
                             limitTo1500Char()
                         }

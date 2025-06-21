@@ -14,6 +14,7 @@ class ChatbotViewModel: ObservableObject {
     @Published var messages: [ChatMessage] = []
     @Published var inputMessage: String = ""
     @Published var isLoading: Bool = false
+    @StateObject private var moodManager = MoodManager.shared
     
     private var currentSession: LanguageModelSession?
     
@@ -24,13 +25,13 @@ class ChatbotViewModel: ObservableObject {
             isUser: false
         ))
         
-        // Initialize session
+        // Launches async setup in background; no need to await here.
         initializeSession()
     }
     
     private func initializeSession() {
         Task {
-            await HealthDataManager.shared.requestHealthKitAuthorization()
+            HealthDataManager.shared.requestHealthKitAuthorization()
             let healthSummary = await HealthDataManager.shared.getHealthSummary()
             guard let todaysMood = moodManager.todaysMood else { return }
             
@@ -167,7 +168,7 @@ class ChatbotViewModel: ObservableObject {
     
     func refreshContext() {
         Task {
-            await HealthDataManager.shared.requestHealthKitAuthorization()
+            HealthDataManager.shared.requestHealthKitAuthorization()
             let healthSummary = await HealthDataManager.shared.getHealthSummary()
             
             currentSession = LanguageModelSession(instructions: """
