@@ -214,9 +214,13 @@ struct MeditationView: View {
                                     // Calculate and display actual duration
                                     if !generatedScript.isEmpty {
                                         let wordCount = generatedScript.split(separator: " ").count
-                                        let estimatedMinutes = Double(wordCount) / 150.0
-                                        let minutes = Int(estimatedMinutes)
-                                        let seconds = Int((estimatedMinutes - Double(minutes)) * 60)
+                                        let wordsPerMinute = 150.0 * 0.7 // Account for 0.7x speech rate
+                                        let estimatedMinutes = Double(wordCount) / wordsPerMinute
+                                        
+                                        // Round to nearest half minute (0.5 minute intervals)
+                                        let roundedMinutes = round(estimatedMinutes * 2.0) / 2.0
+                                        let minutes = Int(roundedMinutes)
+                                        let seconds = Int((roundedMinutes - Double(minutes)) * 60)
                                         
                                         Text("\(minutes):\(String(format: "%02d", seconds))")
                                             .font(.subheadline)
@@ -256,31 +260,51 @@ struct MeditationView: View {
                     
                     // Start Session Button
                     if moodManager.todaysMood != nil {
-                        Button(action: {
-                            showingSession = true
-                        }) {
-                            HStack(spacing: 12) {
-                                Image(systemName: "play.fill")
-                                    .font(.title2)
-                                Text("Start Meditation Session")
-                                    .font(.headline)
-                                    .fontWeight(.semibold)
+                        VStack(spacing: 16) {
+                            // Voice Selection Button
+                            Button(action: { showingVoiceSelection = true }) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "speaker.wave.2.circle.fill")
+                                    Text("Voice: \(availableVoices[selectedVoiceIndex].name)")
+                                        .lineLimit(1)
+                                        .truncationMode(.tail)
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption)
+                                }
+                                .font(.subheadline)
+                                .foregroundColor(.purple)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 12)
+                                .background(Color.purple.opacity(0.1))
+                                .cornerRadius(12)
                             }
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(
-                                LinearGradient(
-                                    colors: [.purple, .blue],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
+                            
+                            Button(action: {
+                                showingSession = true
+                            }) {
+                                HStack(spacing: 12) {
+                                    Image(systemName: "play.fill")
+                                        .font(.title2)
+                                    Text("Start Meditation Session")
+                                        .font(.headline)
+                                        .fontWeight(.semibold)
+                                }
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(
+                                    LinearGradient(
+                                        colors: [.purple, .blue],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
                                 )
-                            )
-                            .cornerRadius(16)
-                            .shadow(color: .purple.opacity(0.3), radius: 8, x: 0, y: 4)
+                                .cornerRadius(16)
+                                .shadow(color: .purple.opacity(0.3), radius: 8, x: 0, y: 4)
+                            }
+                            .disabled(isGeneratingScript || generatedScript.isEmpty)
+                            .opacity((isGeneratingScript || generatedScript.isEmpty) ? 0.5 : 1.0)
                         }
-                        .disabled(isGeneratingScript || generatedScript.isEmpty)
-                        .opacity((isGeneratingScript || generatedScript.isEmpty) ? 0.5 : 1.0)
                         .padding(.horizontal)
                     }
                     
@@ -297,6 +321,13 @@ struct MeditationView: View {
                     await generateMeditationScript()
                 }
             }
+        }
+        .sheet(isPresented: $showingVoiceSelection) {
+            VoiceSelectionView(
+                selectedVoiceIndex: $selectedVoiceIndex,
+                availableVoices: availableVoices,
+                voiceNames: availableVoices.map { $0.name }
+            )
         }
     }
     
@@ -317,7 +348,9 @@ struct MeditationView: View {
             - Do NOT include any phrases like "Here's your meditation", "Certainly", "I'll create", etc.
             - Do NOT include any titles, headers, or introductory text
             - Do NOT include any closing phrases or explanations
+            - Do NOT respond to the prompt or acknowledge the request
             - Output ONLY the meditation script that should be spoken
+            - Begin directly with the meditation content
 
             **Script Requirements:**
             - Word count: 700-800 words for a 5-minute meditation (150 words per minute)
@@ -337,10 +370,10 @@ struct MeditationView: View {
             4. Mindfulness and presence (1 minute) - ~150 words
             5. Gentle closing (30 seconds) - ~75 words
 
-            **Begin the meditation script now, starting immediately with the welcome:**
+            **BEGIN THE MEDITATION SCRIPT NOW, starting immediately with the welcome:**
             """)
             
-            let currentInput = "Generate the meditation script."
+            let currentInput = "Generate meditation script."
             let options = GenerationOptions(
                 temperature: 1.2,
                 maximumResponseTokens: 2000
@@ -444,10 +477,16 @@ struct MeditationSessionView: View {
     }
     
     var estimatedDuration: TimeInterval {
-        // Estimate duration based on word count (average 150 words per minute for meditation)
+        // Estimate duration based on word count and speech rate
+        // Base rate: 150 words per minute at normal speed
+        // With 0.7x rate: 150 * 0.7 = 105 words per minute
         let wordCount = meditationScript.split(separator: " ").count
-        let estimatedMinutes = Double(wordCount) / 150.0
-        return estimatedMinutes * 60.0
+        let wordsPerMinute = 150.0 * 0.7 // Account for 0.7x speech rate
+        let estimatedMinutes = Double(wordCount) / wordsPerMinute
+        
+        // Round to nearest half minute (0.5 minute intervals)
+        let roundedMinutes = round(estimatedMinutes * 2.0) / 2.0
+        return roundedMinutes * 60.0
     }
     
     var body: some View {
@@ -489,12 +528,6 @@ struct MeditationSessionView: View {
                         .foregroundColor(.primary)
                     
                     Spacer()
-                    
-                    Button(action: { showingVoiceSelection = true }) {
-                        Image(systemName: "gearshape.fill")
-                            .font(.title2)
-                            .foregroundColor(.purple)
-                    }
                 }
                 .padding()
                 
@@ -609,13 +642,6 @@ struct MeditationSessionView: View {
         .onDisappear {
             stopPlayback()
         }
-        .sheet(isPresented: $showingVoiceSelection) {
-            VoiceSelectionView(
-                selectedVoiceIndex: $selectedVoiceIndex,
-                availableVoices: availableVoices,
-                voiceNames: availableVoices.map { $0.name }
-            )
-        }
     }
     
     private func setupAudioSession() {
@@ -667,7 +693,7 @@ struct MeditationSessionView: View {
         utterance.voice = availableVoices[voiceIndex]
         
         // Configure utterance properties according to Apple documentation
-        utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 0.8 // More natural rate for meditation
+        utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 0.7 // More natural rate for meditation
         utterance.pitchMultiplier = 1.0
         utterance.volume = 1.0
         utterance.preUtteranceDelay = 0.0
