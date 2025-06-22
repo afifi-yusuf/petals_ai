@@ -189,7 +189,7 @@ struct MeditationView: View {
                                     .frame(maxWidth: .infinity, alignment: .center)
                                     .padding()
                                 } else if !generatedScript.isEmpty {
-                                    HStack(spacing: 12) {
+                                    HStack(spacing: 4) {
                                         Image(systemName: "checkmark.circle.fill")
                                             .font(.title2)
                                             .foregroundColor(.green)
@@ -208,29 +208,6 @@ struct MeditationView: View {
                                 }
                                 
                                 HStack {
-                                    Image(systemName: "clock")
-                                        .foregroundColor(.secondary)
-                                    
-                                    // Calculate and display actual duration
-                                    if !generatedScript.isEmpty {
-                                        let wordCount = generatedScript.split(separator: " ").count
-                                        let wordsPerMinute = 150.0 * 0.7 // Account for 0.7x speech rate
-                                        let estimatedMinutes = Double(wordCount) / wordsPerMinute
-                                        
-                                        // Round to nearest half minute (0.5 minute intervals)
-                                        let roundedMinutes = round(estimatedMinutes * 2.0) / 2.0
-                                        let minutes = Int(roundedMinutes)
-                                        let seconds = Int((roundedMinutes - Double(minutes)) * 60)
-                                        
-                                        Text("\(minutes):\(String(format: "%02d", seconds))")
-                                            .font(.subheadline)
-                                            .foregroundColor(.secondary)
-                                    } else {
-                                        Text("Calculating...")
-                                            .font(.subheadline)
-                                            .foregroundColor(.secondary)
-                                    }
-                                    
                                     Spacer()
                                     
                                     if !isGeneratingScript && generatedScript.isEmpty {
@@ -353,11 +330,29 @@ struct MeditationView: View {
             - Begin directly with the meditation content
 
             **Script Requirements:**
-            - Word count: 700-800 words for a 5-minute meditation (150 words per minute)
+            - Word count: 700-800 words for a 5-minute meditation
             - Start directly with: "Welcome to your meditation session..."
-            - Include breathing guidance, body awareness, and mindfulness
+            - Include natural pauses and breathing guidance
+            - Use conversational, warm, human-like language
+            - Include phrases like "Take a moment to..." and "When you're ready..."
+            - Add breathing cues: "Breathe in... and breathe out..."
+            - Use gentle transitions between sections
             - End with gentle closing and return to awareness
             - Tone: Calming, supportive, natural speech patterns
+
+            **Speech Patterns for Natural Delivery:**
+            - Include pauses: "... and pause here for a moment ..."
+            - Breathing guidance: "Take a deep breath in... hold it... and release..."
+            - Gentle transitions: "Now, when you're ready..."
+            - Mindful pacing: "Notice how you feel... take your time..."
+            - Warm encouragement: "That's right... you're doing beautifully..."
+
+            **Pause Markers (IMPORTANT):**
+            - Use "..." to create natural pauses that the speech synthesizer will respect
+            - Add "..." after sentences to create breathing space
+            - Use "..." before and after breathing guidance
+            - Add "..." at natural transition points
+            - Example: "Welcome to your meditation session... Take a moment to settle in... Now, when you're ready... take a deep breath in... and release..."
 
             **User Context:**
             - Health Summary: \(healthSummary)
@@ -370,7 +365,7 @@ struct MeditationView: View {
             4. Mindfulness and presence (1 minute) - ~150 words
             5. Gentle closing (30 seconds) - ~75 words
 
-            **BEGIN THE MEDITATION SCRIPT NOW, starting immediately with the welcome:**
+            **BEGIN THE MEDITATION SCRIPT NOW, starting immediately with the welcome and using "..." for natural pauses:**
             """)
             
             let currentInput = "Generate meditation script."
@@ -480,8 +475,9 @@ struct MeditationSessionView: View {
         // Estimate duration based on word count and speech rate
         // Base rate: 150 words per minute at normal speed
         // With 0.7x rate: 150 * 0.7 = 105 words per minute
+        // Add 20% for natural pauses, breathing, and meditation pacing
         let wordCount = meditationScript.split(separator: " ").count
-        let wordsPerMinute = 150.0 * 0.7 // Account for 0.7x speech rate
+        let wordsPerMinute = 150.0 * 0.7 * 0.8 // Account for 0.7x speech rate + 20% pause time
         let estimatedMinutes = Double(wordCount) / wordsPerMinute
         
         // Round to nearest half minute (0.5 minute intervals)
@@ -538,27 +534,15 @@ struct MeditationSessionView: View {
                     Text(formattedTime)
                         .font(.system(size: 48, weight: .light, design: .rounded))
                         .foregroundColor(.primary)
-                    
-                    Text("elapsed")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                    
-                    // Show estimated total duration
-                    let durationMinutes = Int(estimatedDuration) / 60
-                    let durationSeconds = Int(estimatedDuration) % 60
-                    Text("Estimated: \(durationMinutes):\(String(format: "%02d", durationSeconds))")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
                 }
                 
-                // Progress Ring
+                // Calming Pulse Animation
                 ZStack {
                     Circle()
                         .stroke(Color.gray.opacity(0.2), lineWidth: 8)
                         .frame(width: 200, height: 200)
                     
                     Circle()
-                        .trim(from: 0, to: progress)
                         .stroke(
                             LinearGradient(
                                 colors: [.purple, .blue],
@@ -568,8 +552,13 @@ struct MeditationSessionView: View {
                             style: StrokeStyle(lineWidth: 8, lineCap: .round)
                         )
                         .frame(width: 200, height: 200)
-                        .rotationEffect(.degrees(-90))
-                        .animation(.linear(duration: 1), value: progress)
+                        .scaleEffect(isPlaying ? 1.1 : 1.0)
+                        .opacity(isPlaying ? 0.8 : 0.6)
+                        .animation(
+                            Animation.easeInOut(duration: 2.0)
+                                .repeatForever(autoreverses: true),
+                            value: isPlaying
+                        )
                 }
                 
                 // Audio Status
@@ -696,8 +685,8 @@ struct MeditationSessionView: View {
         utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 0.7 // More natural rate for meditation
         utterance.pitchMultiplier = 1.0
         utterance.volume = 1.0
-        utterance.preUtteranceDelay = 0.0
-        utterance.postUtteranceDelay = 0.0
+        utterance.preUtteranceDelay = 1.0 // 1 second pause before starting
+        utterance.postUtteranceDelay = 0.5 // 0.5 second pause after finishing
         
         print("🔊 Speech utterance created with voice: \(utterance.voice?.name ?? "Unknown")")
         print("🎤 Starting speech synthesis...")
