@@ -10,8 +10,8 @@ struct JournalView: View {
     @State private var journalText: String = ""
     @State private var wordLimitReached: Bool = false
     @State private var showingSaveSuccess = false
-    
     @State private var isRecording = false
+    @State private var isPast = false
     @State private var speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
     @State private var recognitionTask: SFSpeechRecognitionTask?
     let audioEngine = AVAudioEngine()
@@ -24,6 +24,22 @@ struct JournalView: View {
             
             VStack(spacing: 0) {
                 header
+                //Get Previous Logs button
+                NavigationStack{
+                    VStack(spacing: 20){
+                        NavigationLink(destination: PastLogView()) {
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.mint)
+                                .frame(height: 50)
+                                .overlay(
+                                    Text("Go to Past Journal Logs 📖")
+                                        .foregroundColor(.white)
+                                        .font(.headline)
+                                )
+                                .padding(.horizontal, 24)
+                        }
+                    }
+                }
                 
                 ScrollView {
                     VStack(spacing: 24) {
@@ -379,4 +395,3 @@ struct TipRow: View {
 #Preview {
     JournalView()
 } 
-

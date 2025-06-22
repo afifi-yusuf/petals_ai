@@ -45,6 +45,7 @@ struct Petals_AIApp: App {
                     .fullScreenCover(isPresented: $moodManager.showingMoodPrompt) {
                         DailyMoodPromptView()
                     }
+                    .modelContainer(for: JournalLogModel.self)
             } else {
                 LoginView()
                     .onOpenURL { url in
