@@ -9,6 +9,29 @@ struct MeditationView: View {
     @State private var showingSession = false
     @State private var generatedScript: String = ""
     @State private var isGeneratingScript: Bool = false
+    @State private var showingVoiceSelection = false
+    @State private var selectedVoiceIndex = 0
+    
+    private let availableVoices: [AVSpeechSynthesisVoice] = {
+        let allVoices = AVSpeechSynthesisVoice.speechVoices()
+        var englishVoices: [AVSpeechSynthesisVoice] = []
+        
+        // Include all English voices (both enhanced and default quality)
+        for voice in allVoices {
+            if voice.language.hasPrefix("en-") {
+                englishVoices.append(voice)
+            }
+        }
+        
+        return englishVoices
+    }()
+    
+    private var voiceNames: [String] {
+        return availableVoices.map { voice in
+            let qualityIndicator = voice.quality == .enhanced ? " ⭐️" : ""
+            return "\(voice.name)\(qualityIndicator)"
+        }
+    }
     
     var body: some View {
         ZStack {
@@ -187,9 +210,22 @@ struct MeditationView: View {
                                 HStack {
                                     Image(systemName: "clock")
                                         .foregroundColor(.secondary)
-                                    Text("5 minutes")
-                                        .font(.subheadline)
-                                        .foregroundColor(.secondary)
+                                    
+                                    // Calculate and display actual duration
+                                    if !generatedScript.isEmpty {
+                                        let wordCount = generatedScript.split(separator: " ").count
+                                        let estimatedMinutes = Double(wordCount) / 150.0
+                                        let minutes = Int(estimatedMinutes)
+                                        let seconds = Int((estimatedMinutes - Double(minutes)) * 60)
+                                        
+                                        Text("\(minutes):\(String(format: "%02d", seconds))")
+                                            .font(.subheadline)
+                                            .foregroundColor(.secondary)
+                                    } else {
+                                        Text("Calculating...")
+                                            .font(.subheadline)
+                                            .foregroundColor(.secondary)
+                                    }
                                     
                                     Spacer()
                                     
@@ -274,32 +310,40 @@ struct MeditationView: View {
             let healthSummary = await HealthDataManager.shared.getHealthSummary()
             
             let session = LanguageModelSession(instructions: """
-            You are **Petal**, a kind and emotionally intelligent health coach. Your role is to generate a personalized meditation script that will be converted directly to audio using text-to-speech.
+            You are generating a meditation script that will be spoken aloud. 
 
-            **IMPORTANT:** Your entire response must be ONLY the meditation script itself. Do not include any introductory phrases like "Here is your script," titles, or any other text. The output should be ready to be spoken aloud immediately.
+            **CRITICAL RULES:**
+            - Start IMMEDIATELY with the meditation content
+            - Do NOT include any phrases like "Here's your meditation", "Certainly", "I'll create", etc.
+            - Do NOT include any titles, headers, or introductory text
+            - Do NOT include any closing phrases or explanations
+            - Output ONLY the meditation script that should be spoken
 
-            The script must adhere to these constraints:
-            - **Word Count:** The script must be between **560 and 590 words**. This is critical for timing.
-            - **Tone:** Gentle, calming, and supportive.
-            - **Personalization:** Based on the user's current mood and comprehensive wellness data.
+            **Script Requirements:**
+            - Word count: 700-800 words for a 5-minute meditation (150 words per minute)
+            - Start directly with: "Welcome to your meditation session..."
+            - Include breathing guidance, body awareness, and mindfulness
+            - End with gentle closing and return to awareness
+            - Tone: Calming, supportive, natural speech patterns
 
-            **User's Data:**
+            **User Context:**
             - Health Summary: \(healthSummary)
             - Current Mood: \(todaysMood.title) - \(todaysMood.description)
 
-            **Special Instructions:**
-            - If the user has high screen time, acknowledge this and suggest taking a digital break
-            - If they've been active, acknowledge their physical activity
-            - If they have low screen time, celebrate their digital wellness
-            - Always tie the context back to finding inner peace and mindfulness
+            **Structure (5 minutes total):**
+            1. Welcome and settling (30 seconds) - ~75 words
+            2. Breathing guidance (1 minute) - ~150 words
+            3. Body scan and relaxation (2 minutes) - ~300 words
+            4. Mindfulness and presence (1 minute) - ~150 words
+            5. Gentle closing (30 seconds) - ~75 words
 
-            Now, provide the complete meditation script text.
+            **Begin the meditation script now, starting immediately with the welcome:**
             """)
             
-            let currentInput = "Generate the meditation script now."
+            let currentInput = "Generate the meditation script."
             let options = GenerationOptions(
                 temperature: 1.2,
-                maximumResponseTokens: 800 // Adjusted for a tighter word count
+                maximumResponseTokens: 2000
             )
             let response = try await session.respond(to: Prompt(currentInput), options: options)
             let responseContent = response.content
@@ -352,23 +396,58 @@ struct MeditationSessionView: View {
     @Environment(\.colorScheme) private var colorScheme
     @State private var isPlaying = false
     @State private var currentTime: TimeInterval = 0
-    @State private var totalTime: TimeInterval = 300 // 5 minutes
+    @State private var totalTime: TimeInterval = 0
     @State private var synthesizer = AVSpeechSynthesizer()
     @State private var isAudioReady = false
     @State private var isGeneratingAudio = false
     @State private var timer: Timer?
+    @State private var showingVoiceSelection = false
+    @State private var selectedVoiceIndex: Int
+    @State private var speechDelegate: SpeechSynthesizerDelegate?
     let meditationScript: String
     
+    private let availableVoices: [AVSpeechSynthesisVoice] = {
+        let allVoices = AVSpeechSynthesisVoice.speechVoices()
+        var englishVoices: [AVSpeechSynthesisVoice] = []
+        
+        // Include all English voices (both enhanced and default quality)
+        for voice in allVoices {
+            if voice.language.hasPrefix("en-") {
+                englishVoices.append(voice)
+            }
+        }
+        
+        return englishVoices
+    }()
+    
+    init(meditationScript: String) {
+        self.meditationScript = meditationScript
+        
+        // Use the default voice (first available English voice)
+        let voices = AVSpeechSynthesisVoice.speechVoices()
+        if let defaultIndex = voices.firstIndex(where: { $0.language.hasPrefix("en-") }) {
+            _selectedVoiceIndex = State(initialValue: defaultIndex)
+        } else {
+            _selectedVoiceIndex = State(initialValue: 0)
+        }
+    }
+    
     var progress: Double {
-        guard totalTime > 0 else { return 0 }
-        return 1.0 - (currentTime / totalTime)
+        guard estimatedDuration > 0 else { return 0 }
+        return min(currentTime / estimatedDuration, 1.0)
     }
     
     var formattedTime: String {
-        let remaining = totalTime - currentTime
-        let minutes = Int(remaining) / 60
-        let seconds = Int(remaining) % 60
+        let minutes = Int(currentTime) / 60
+        let seconds = Int(currentTime) % 60
         return String(format: "%02d:%02d", minutes, seconds)
+    }
+    
+    var estimatedDuration: TimeInterval {
+        // Estimate duration based on word count (average 150 words per minute for meditation)
+        let wordCount = meditationScript.split(separator: " ").count
+        let estimatedMinutes = Double(wordCount) / 150.0
+        return estimatedMinutes * 60.0
     }
     
     var body: some View {
@@ -411,10 +490,10 @@ struct MeditationSessionView: View {
                     
                     Spacer()
                     
-                    Button(action: {}) {
-                        Image(systemName: "ellipsis.circle")
+                    Button(action: { showingVoiceSelection = true }) {
+                        Image(systemName: "gearshape.fill")
                             .font(.title2)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.purple)
                     }
                 }
                 .padding()
@@ -427,8 +506,15 @@ struct MeditationSessionView: View {
                         .font(.system(size: 48, weight: .light, design: .rounded))
                         .foregroundColor(.primary)
                     
-                    Text("remaining")
+                    Text("elapsed")
                         .font(.subheadline)
+                        .foregroundColor(.secondary)
+                    
+                    // Show estimated total duration
+                    let durationMinutes = Int(estimatedDuration) / 60
+                    let durationSeconds = Int(estimatedDuration) % 60
+                    Text("Estimated: \(durationMinutes):\(String(format: "%02d", durationSeconds))")
+                        .font(.caption)
                         .foregroundColor(.secondary)
                 }
                 
@@ -475,14 +561,7 @@ struct MeditationSessionView: View {
                 
                 // Controls
                 HStack(spacing: 40) {
-                    Button(action: {}) {
-                        Image(systemName: "gobackward.15")
-                            .font(.title)
-                            .foregroundColor(.primary)
-                    }
-                    .disabled(!isAudioReady)
-                    
-                    Button(action: { 
+                    Button(action: {
                         if isAudioReady {
                             togglePlayback()
                         } else {
@@ -502,19 +581,12 @@ struct MeditationSessionView: View {
                             )
                     }
                     .disabled(isGeneratingAudio)
-                    
-                    Button(action: {}) {
-                        Image(systemName: "goforward.30")
-                            .font(.title)
-                            .foregroundColor(.primary)
-                    }
-                    .disabled(!isAudioReady)
                 }
                 
                 // End Session Button
-                Button(action: { 
+                Button(action: {
                     stopPlayback()
-                    dismiss() 
+                    dismiss()
                 }) {
                     Text("End Session")
                         .font(.headline)
@@ -529,12 +601,20 @@ struct MeditationSessionView: View {
         }
         .onAppear {
             setupAudioSession()
+            setupSpeechDelegate()
             Task {
                 await generateAudio()
             }
         }
         .onDisappear {
             stopPlayback()
+        }
+        .sheet(isPresented: $showingVoiceSelection) {
+            VoiceSelectionView(
+                selectedVoiceIndex: $selectedVoiceIndex,
+                availableVoices: availableVoices,
+                voiceNames: availableVoices.map { $0.name }
+            )
         }
     }
     
@@ -548,74 +628,67 @@ struct MeditationSessionView: View {
     }
     
     private func generateAudio() async {
-        guard !meditationScript.isEmpty else { return }
+        guard !meditationScript.isEmpty else {
+            print("❌ Cannot generate audio: script is empty")
+            return
+        }
         
+        print("🎵 Generating audio for meditation...")
         isGeneratingAudio = true
         
-        do {
-            // Create speech utterance
-            let utterance = AVSpeechUtterance(string: meditationScript)
-            utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-            utterance.rate = 0.4 // Slower rate for meditation
-            utterance.pitchMultiplier = 0.8 // Slightly lower pitch for calming effect
-            utterance.volume = 0.8
-            
-            // Set up synthesizer delegate to track progress
-            synthesizer.delegate = SpeechSynthesizerDelegate(
-                onStart: {
-                    DispatchQueue.main.async {
-                        self.isAudioReady = true
-                        self.isGeneratingAudio = false
-                        self.startTimer()
-                    }
-                },
-                onFinish: {
-                    DispatchQueue.main.async {
-                        self.stopPlayback()
-                    }
-                }
-            )
-            
-            await MainActor.run {
-                self.isAudioReady = true
-                self.isGeneratingAudio = false
-            }
-            
-        } catch {
-            print("Error generating audio: \(error)")
-            await MainActor.run {
-                self.isGeneratingAudio = false
-            }
-        }
-    }
-    
-    private func togglePlayback() {
-        if isPlaying {
-            pausePlayback()
-        } else {
-            startPlayback()
+        await MainActor.run {
+            self.isAudioReady = true
+            self.isGeneratingAudio = false
+            print("✅ Audio ready for playback")
         }
     }
     
     private func startPlayback() {
-        guard !meditationScript.isEmpty else { return }
+        guard !meditationScript.isEmpty else { 
+            print("❌ Cannot start playback: script is empty")
+            return 
+        }
         
-        // Create and start speech utterance
+        print("🎵 Starting meditation playback...")
+        
+        // Ensure audio session is active
+        do {
+            try AVAudioSession.sharedInstance().setActive(true)
+            print("✅ Audio session activated")
+        } catch {
+            print("❌ Failed to activate audio session: \(error)")
+        }
+        
+        // Create speech utterance with proper configuration
         let utterance = AVSpeechUtterance(string: meditationScript)
-        utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-        utterance.rate = 0.4
-        utterance.pitchMultiplier = 0.8
-        utterance.volume = 0.8
+        
+        // Set the voice - ensure it's within bounds
+        let voiceIndex = min(selectedVoiceIndex, availableVoices.count - 1)
+        utterance.voice = availableVoices[voiceIndex]
+        
+        // Configure utterance properties according to Apple documentation
+        utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 0.8 // More natural rate for meditation
+        utterance.pitchMultiplier = 1.0
+        utterance.volume = 1.0
+        utterance.preUtteranceDelay = 0.0
+        utterance.postUtteranceDelay = 0.0
+        
+        print("🔊 Speech utterance created with voice: \(utterance.voice?.name ?? "Unknown")")
+        print("🎤 Starting speech synthesis...")
         
         synthesizer.speak(utterance)
         isPlaying = true
         startTimer()
+        print("✅ Playback started successfully")
     }
     
     private func pausePlayback() {
-        synthesizer.pauseSpeaking(at: .immediate)
-        isPlaying = false
-        stopTimer()
+        if synthesizer.isSpeaking {
+            synthesizer.pauseSpeaking(at: .immediate)
+            isPlaying = false
+            stopTimer()
+            print("⏸️ Playback paused")
+        }
     }
     
     private func stopPlayback() {
@@ -623,22 +696,54 @@ struct MeditationSessionView: View {
         isPlaying = false
         stopTimer()
         currentTime = 0
+        print("⏹️ Playback stopped")
     }
     
     private func startTimer() {
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            if currentTime < totalTime {
-                currentTime += 1
-            } else {
-                stopPlayback()
-            }
+            currentTime += 1
         }
     }
     
     private func stopTimer() {
         timer?.invalidate()
         timer = nil
+    }
+    
+    private func setupSpeechDelegate() {
+        speechDelegate = SpeechSynthesizerDelegate(
+            onStart: {
+                print("🎵 Speech started")
+            },
+            onFinish: {
+                DispatchQueue.main.async {
+                    self.isPlaying = false
+                    self.stopTimer()
+                    print("✅ Speech finished - Total time: \(Int(self.currentTime)) seconds")
+                }
+            }
+        )
+        synthesizer.delegate = speechDelegate
+    }
+    
+    private func togglePlayback() {
+        if isPlaying {
+            pausePlayback()
+        } else {
+            if synthesizer.isPaused {
+                resumePlayback()
+            } else {
+                startPlayback()
+            }
+        }
+    }
+    
+    private func resumePlayback() {
+        synthesizer.continueSpeaking()
+        isPlaying = true
+        startTimer()
+        print("▶️ Playback resumed")
     }
 }
 
@@ -711,6 +816,182 @@ enum MoodType: String, CaseIterable {
         case .energetic: return .yellow
         case .focused: return .purple
         }
+    }
+}
+
+struct VoiceSelectionView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var selectedVoiceIndex: Int
+    let availableVoices: [AVSpeechSynthesisVoice]
+    let voiceNames: [String]
+    
+    private var enhancedVoices: [(index: Int, voice: AVSpeechSynthesisVoice)] {
+        return availableVoices.enumerated()
+            .filter { $0.element.quality == .enhanced }
+            .map { (offset, element) in (index: offset, voice: element) }
+    }
+    
+    private var standardVoices: [(index: Int, voice: AVSpeechSynthesisVoice)] {
+        return availableVoices.enumerated()
+            .filter { $0.element.quality == .default }
+            .map { (offset, element) in (index: offset, voice: element) }
+    }
+    
+    var body: some View {
+        NavigationView {
+            List {
+                Section {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Current Voice")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                        
+                        if !availableVoices.isEmpty {
+                            HStack {
+                                Text(availableVoices[selectedVoiceIndex].name)
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                
+                                Spacer()
+                                
+                                if availableVoices[selectedVoiceIndex].quality == .enhanced {
+                                    Label("Premium", systemImage: "star.fill")
+                                        .font(.caption)
+                                        .foregroundColor(.yellow)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                        .background(Color.yellow.opacity(0.2))
+                                        .cornerRadius(12)
+                                }
+                            }
+                        } else {
+                            Text("No voices available")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                } header: {
+                    Text("Voice Settings")
+                        .textCase(.uppercase)
+                }
+                
+                if !enhancedVoices.isEmpty {
+                    Section {
+                        ForEach(enhancedVoices, id: \.voice.identifier) { index, voice in
+                            VoiceRow(
+                                name: voice.name,
+                                language: voice.language,
+                                isPremium: true,
+                                isSelected: selectedVoiceIndex == index
+                            )
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                selectedVoiceIndex = index
+                                dismiss()
+                            }
+                        }
+                    } header: {
+                        Text("Premium Voices")
+                            .textCase(.uppercase)
+                    } footer: {
+                        Text("Enhanced quality voices for the best meditation experience")
+                    }
+                }
+                
+                if !standardVoices.isEmpty {
+                    Section {
+                        ForEach(standardVoices, id: \.voice.identifier) { index, voice in
+                            VoiceRow(
+                                name: voice.name,
+                                language: voice.language,
+                                isPremium: false,
+                                isSelected: selectedVoiceIndex == index
+                            )
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                selectedVoiceIndex = index
+                                dismiss()
+                            }
+                        }
+                    } header: {
+                        Text("Standard Voices")
+                            .textCase(.uppercase)
+                    }
+                }
+                
+                if availableVoices.isEmpty {
+                    Section {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("No Voices Available")
+                                .font(.headline)
+                                .foregroundColor(.primary)
+                            
+                            Text("To get voices for meditation:")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("1. Open iOS Settings")
+                                Text("2. Go to Accessibility > Spoken Content > Voices")
+                                Text("3. Select English")
+                                Text("4. Download any voices you prefer")
+                            }
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        }
+                        .padding(.vertical, 8)
+                    }
+                }
+            }
+            .navigationTitle("Voice Settings")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct VoiceRow: View {
+    let name: String
+    let language: String
+    let isPremium: Bool
+    let isSelected: Bool
+    
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(name)
+                    .foregroundColor(isSelected ? .purple : .primary)
+                Text(language)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            
+            Spacer()
+            
+            if isPremium {
+                Label("Premium", systemImage: "star.fill")
+                    .font(.caption)
+                    .foregroundColor(.yellow)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.yellow.opacity(0.2))
+                    .cornerRadius(12)
+            }
+            
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(.purple)
+                    .padding(.leading, 4)
+            }
+        }
+        .contentShape(Rectangle())
     }
 }
 
