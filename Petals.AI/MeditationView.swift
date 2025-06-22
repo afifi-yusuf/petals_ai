@@ -1,5 +1,6 @@
 import SwiftUI
 import FoundationModels
+import AVFoundation
 
 struct MeditationView: View {
     @Environment(\.dismiss) private var dismiss
@@ -352,6 +353,10 @@ struct MeditationSessionView: View {
     @State private var isPlaying = false
     @State private var currentTime: TimeInterval = 0
     @State private var totalTime: TimeInterval = 300 // 5 minutes
+    @State private var synthesizer = AVSpeechSynthesizer()
+    @State private var isAudioReady = false
+    @State private var isGeneratingAudio = false
+    @State private var timer: Timer?
     let meditationScript: String
     
     var progress: Double {
@@ -448,6 +453,26 @@ struct MeditationSessionView: View {
                         .animation(.linear(duration: 1), value: progress)
                 }
                 
+                // Audio Status
+                if isGeneratingAudio {
+                    VStack(spacing: 8) {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                        Text("Preparing audio...")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                } else if !isAudioReady {
+                    VStack(spacing: 8) {
+                        Image(systemName: "speaker.slash")
+                            .font(.title2)
+                            .foregroundColor(.secondary)
+                        Text("Audio not ready")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
                 // Controls
                 HStack(spacing: 40) {
                     Button(action: {}) {
@@ -455,9 +480,18 @@ struct MeditationSessionView: View {
                             .font(.title)
                             .foregroundColor(.primary)
                     }
+                    .disabled(!isAudioReady)
                     
-                    Button(action: { isPlaying.toggle() }) {
-                        Image(systemName: isPlaying ? "pause.circle.fill" : "play.circle.fill")
+                    Button(action: { 
+                        if isAudioReady {
+                            togglePlayback()
+                        } else {
+                            Task {
+                                await generateAudio()
+                            }
+                        }
+                    }) {
+                        Image(systemName: isAudioReady ? (isPlaying ? "pause.circle.fill" : "play.circle.fill") : "waveform.circle")
                             .font(.system(size: 60))
                             .foregroundStyle(
                                 LinearGradient(
@@ -467,16 +501,21 @@ struct MeditationSessionView: View {
                                 )
                             )
                     }
+                    .disabled(isGeneratingAudio)
                     
                     Button(action: {}) {
                         Image(systemName: "goforward.30")
                             .font(.title)
                             .foregroundColor(.primary)
                     }
+                    .disabled(!isAudioReady)
                 }
                 
                 // End Session Button
-                Button(action: { dismiss() }) {
+                Button(action: { 
+                    stopPlayback()
+                    dismiss() 
+                }) {
                     Text("End Session")
                         .font(.headline)
                         .foregroundColor(.red)
@@ -488,6 +527,137 @@ struct MeditationSessionView: View {
                 Spacer()
             }
         }
+        .onAppear {
+            setupAudioSession()
+            Task {
+                await generateAudio()
+            }
+        }
+        .onDisappear {
+            stopPlayback()
+        }
+    }
+    
+    private func setupAudioSession() {
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            print("Failed to setup audio session: \(error)")
+        }
+    }
+    
+    private func generateAudio() async {
+        guard !meditationScript.isEmpty else { return }
+        
+        isGeneratingAudio = true
+        
+        do {
+            // Create speech utterance
+            let utterance = AVSpeechUtterance(string: meditationScript)
+            utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
+            utterance.rate = 0.4 // Slower rate for meditation
+            utterance.pitchMultiplier = 0.8 // Slightly lower pitch for calming effect
+            utterance.volume = 0.8
+            
+            // Set up synthesizer delegate to track progress
+            synthesizer.delegate = SpeechSynthesizerDelegate(
+                onStart: {
+                    DispatchQueue.main.async {
+                        self.isAudioReady = true
+                        self.isGeneratingAudio = false
+                        self.startTimer()
+                    }
+                },
+                onFinish: {
+                    DispatchQueue.main.async {
+                        self.stopPlayback()
+                    }
+                }
+            )
+            
+            await MainActor.run {
+                self.isAudioReady = true
+                self.isGeneratingAudio = false
+            }
+            
+        } catch {
+            print("Error generating audio: \(error)")
+            await MainActor.run {
+                self.isGeneratingAudio = false
+            }
+        }
+    }
+    
+    private func togglePlayback() {
+        if isPlaying {
+            pausePlayback()
+        } else {
+            startPlayback()
+        }
+    }
+    
+    private func startPlayback() {
+        guard !meditationScript.isEmpty else { return }
+        
+        // Create and start speech utterance
+        let utterance = AVSpeechUtterance(string: meditationScript)
+        utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
+        utterance.rate = 0.4
+        utterance.pitchMultiplier = 0.8
+        utterance.volume = 0.8
+        
+        synthesizer.speak(utterance)
+        isPlaying = true
+        startTimer()
+    }
+    
+    private func pausePlayback() {
+        synthesizer.pauseSpeaking(at: .immediate)
+        isPlaying = false
+        stopTimer()
+    }
+    
+    private func stopPlayback() {
+        synthesizer.stopSpeaking(at: .immediate)
+        isPlaying = false
+        stopTimer()
+        currentTime = 0
+    }
+    
+    private func startTimer() {
+        timer?.invalidate()
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            if currentTime < totalTime {
+                currentTime += 1
+            } else {
+                stopPlayback()
+            }
+        }
+    }
+    
+    private func stopTimer() {
+        timer?.invalidate()
+        timer = nil
+    }
+}
+
+// Helper class to handle speech synthesizer delegate
+class SpeechSynthesizerDelegate: NSObject, AVSpeechSynthesizerDelegate {
+    let onStart: () -> Void
+    let onFinish: () -> Void
+    
+    init(onStart: @escaping () -> Void, onFinish: @escaping () -> Void) {
+        self.onStart = onStart
+        self.onFinish = onFinish
+    }
+    
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
+        onStart()
+    }
+    
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+        onFinish()
     }
 }
 
