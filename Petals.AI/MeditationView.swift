@@ -177,6 +177,7 @@ struct MeditationView: View {
                                 Spacer()
                                 
                                 if isGeneratingScript {
+
                                     ProgressView()
                                         .scaleEffect(0.8)
                                 }
@@ -1060,3 +1061,4 @@ struct VoiceRow: View {
 #Preview {
     MeditationView()
 } 
+
