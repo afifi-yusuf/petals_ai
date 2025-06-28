@@ -11,6 +11,12 @@ struct MeditationView: View {
     @State private var isGeneratingScript: Bool = false
     @State private var showingVoiceSelection = false
     @State private var selectedVoiceIndex = 0
+    @State private var backgroundAudioPlayer: AVAudioPlayer?
+    @State private var speechDelegate: SpeechSynthesizerDelegate?
+    @State private var backgroundVolume: Float = 0.5
+    
+    // Always use flow background audio
+    private let backgroundAudioFileName = "flow"
     
     private let availableVoices: [AVSpeechSynthesisVoice] = {
         let allVoices = AVSpeechSynthesisVoice.speechVoices()
@@ -290,7 +296,11 @@ struct MeditationView: View {
             }
         }
         .fullScreenCover(isPresented: $showingSession) {
-            MeditationSessionView(meditationScript: generatedScript)
+            MeditationSessionView(
+                meditationScript: generatedScript, 
+                selectedVoiceIndex: selectedVoiceIndex,
+                backgroundAudioFileName: backgroundAudioFileName
+            )
         }
         .onAppear {
             if let _ = moodManager.todaysMood, generatedScript.isEmpty {
@@ -429,10 +439,13 @@ struct MeditationSessionView: View {
     @State private var isAudioReady = false
     @State private var isGeneratingAudio = false
     @State private var timer: Timer?
-    @State private var showingVoiceSelection = false
-    @State private var selectedVoiceIndex: Int
     @State private var speechDelegate: SpeechSynthesizerDelegate?
+    @State private var backgroundAudioPlayer: AVAudioPlayer?
+    @State private var speechVolume: Float = 1.0
+    @State private var backgroundVolume: Float = 1.0
     let meditationScript: String
+    let selectedVoiceIndex: Int
+    let backgroundAudioFileName: String
     
     private let availableVoices: [AVSpeechSynthesisVoice] = {
         let allVoices = AVSpeechSynthesisVoice.speechVoices()
@@ -448,16 +461,10 @@ struct MeditationSessionView: View {
         return englishVoices
     }()
     
-    init(meditationScript: String) {
+    init(meditationScript: String, selectedVoiceIndex: Int, backgroundAudioFileName: String) {
         self.meditationScript = meditationScript
-        
-        // Use the default voice (first available English voice)
-        let voices = AVSpeechSynthesisVoice.speechVoices()
-        if let defaultIndex = voices.firstIndex(where: { $0.language.hasPrefix("en-") }) {
-            _selectedVoiceIndex = State(initialValue: defaultIndex)
-        } else {
-            _selectedVoiceIndex = State(initialValue: 0)
-        }
+        self.selectedVoiceIndex = selectedVoiceIndex
+        self.backgroundAudioFileName = backgroundAudioFileName
     }
     
     var progress: Double {
@@ -605,6 +612,24 @@ struct MeditationSessionView: View {
                     .disabled(isGeneratingAudio)
                 }
                 
+                // Background Volume Control
+                VStack(spacing: 8) {
+                    HStack {
+                        Image(systemName: "speaker.wave.1")
+                            .foregroundColor(.blue)
+                        Text("Background Volume")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        Spacer()
+                    }
+                    
+                    Slider(value: $backgroundVolume, in: 0...1) { _ in
+                        backgroundAudioPlayer?.volume = backgroundVolume
+                    }
+                    .accentColor(.blue)
+                }
+                .padding(.horizontal, 40)
+                
                 // End Session Button
                 Button(action: {
                     stopPlayback()
@@ -624,6 +649,7 @@ struct MeditationSessionView: View {
         .onAppear {
             setupAudioSession()
             setupSpeechDelegate()
+            setupBackgroundAudio()
             Task {
                 await generateAudio()
             }
@@ -635,8 +661,10 @@ struct MeditationSessionView: View {
     
     private func setupAudioSession() {
         do {
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+            // Configure audio session for mixing multiple audio sources
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
             try AVAudioSession.sharedInstance().setActive(true)
+            print("✅ Audio session configured for mixing")
         } catch {
             print("Failed to setup audio session: \(error)")
         }
@@ -694,6 +722,7 @@ struct MeditationSessionView: View {
         synthesizer.speak(utterance)
         isPlaying = true
         startTimer()
+        startBackgroundAudio()
         print("✅ Playback started successfully")
     }
     
@@ -702,6 +731,7 @@ struct MeditationSessionView: View {
             synthesizer.pauseSpeaking(at: .immediate)
             isPlaying = false
             stopTimer()
+            stopBackgroundAudio()
             print("⏸️ Playback paused")
         }
     }
@@ -710,6 +740,7 @@ struct MeditationSessionView: View {
         synthesizer.stopSpeaking(at: .immediate)
         isPlaying = false
         stopTimer()
+        stopBackgroundAudio()
         currentTime = 0
         print("⏹️ Playback stopped")
     }
@@ -735,6 +766,7 @@ struct MeditationSessionView: View {
                 DispatchQueue.main.async {
                     self.isPlaying = false
                     self.stopTimer()
+                    self.stopBackgroundAudio()
                     print("✅ Speech finished - Total time: \(Int(self.currentTime)) seconds")
                 }
             }
@@ -742,23 +774,38 @@ struct MeditationSessionView: View {
         synthesizer.delegate = speechDelegate
     }
     
+    private func setupBackgroundAudio() {
+        guard let url = Bundle.main.url(forResource: backgroundAudioFileName, withExtension: "mp3") else {
+            print("❌ Could not find background audio file: \(backgroundAudioFileName)")
+            return
+        }
+        
+        do {
+            backgroundAudioPlayer = try AVAudioPlayer(contentsOf: url)
+            backgroundAudioPlayer?.numberOfLoops = -1 // Infinite loop
+            backgroundAudioPlayer?.prepareToPlay()
+            print("🎵 Background audio loaded successfully")
+        } catch {
+            print("❌ Failed to load background audio: \(error)")
+        }
+    }
+    
+    private func startBackgroundAudio() {
+        backgroundAudioPlayer?.play()
+        print("🎵 Background audio started")
+    }
+    
+    private func stopBackgroundAudio() {
+        backgroundAudioPlayer?.stop()
+        print("🎵 Background audio stopped")
+    }
+    
     private func togglePlayback() {
         if isPlaying {
             pausePlayback()
         } else {
-            if synthesizer.isPaused {
-                resumePlayback()
-            } else {
-                startPlayback()
-            }
+            startPlayback()
         }
-    }
-    
-    private func resumePlayback() {
-        synthesizer.continueSpeaking()
-        isPlaying = true
-        startTimer()
-        print("▶️ Playback resumed")
     }
 }
 
