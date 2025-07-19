@@ -24,6 +24,9 @@ struct DashboardView: View {
         !healthKitAuthorized || !screenTimeManager.isAuthorized
     }
     
+    // Track if permissions have ever been granted
+    @State private var permissionsCompleted = false
+
     var body: some View {
         NavigationView {
             ZStack {
@@ -71,8 +74,8 @@ struct DashboardView: View {
                                 
                                 Spacer()
                                 
-                                // Permissions button
-                                if needsPermissions {
+                                // Permissions button (show only if not completed)
+                                if needsPermissions && !permissionsCompleted {
                                     Button(action: {
                                         showingPermissions = true
                                     }) {
@@ -120,8 +123,8 @@ struct DashboardView: View {
                             .padding(.top, 8)
                         }
                         
-                        // Permissions Banner (if needed)
-                        if needsPermissions {
+                        // Permissions Banner (show only if not completed)
+                        if needsPermissions && !permissionsCompleted {
                             PermissionsBanner {
                                 showingPermissions = true
                             }
@@ -319,12 +322,22 @@ struct DashboardView: View {
         .fullScreenCover(isPresented: $showingJournal) {
             JournalView()
         }
-        .sheet(isPresented: $showingPermissions) {
+        .sheet(isPresented: $showingPermissions, onDismiss: {
+            // Always re-check after sheet closes
+            checkInitialPermissions()
+            if !needsPermissions {
+                permissionsCompleted = true
+            }
+        }) {
             PermissionsView(
                 healthKitAuthorized: $healthKitAuthorized,
                 onPermissionsGranted: {
                     Task {
                         await fetchHealthData()
+                        // If permissions are now granted, mark as completed
+                        if !needsPermissions {
+                            permissionsCompleted = true
+                        }
                     }
                 }
             )
@@ -545,22 +558,23 @@ struct PermissionsView: View {
                 }
             }
         }
+        .onAppear {
+            // No need to check HealthKit status for green tick anymore
+            screenTimeManager.checkAuthorizationStatus()
+        }
     }
     
     private func requestHealthKitPermission() {
         guard !isRequestingHealthKit else { return }
         isRequestingHealthKit = true
-        
         Task {
             await MainActor.run {
                 HealthDataManager.shared.requestHealthKitAuthorization()
             }
-            
             // Wait a moment for the authorization to complete
-            try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
-            
+            try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
             await MainActor.run {
-                checkHealthKitStatus()
+                healthKitAuthorized = true // Always set to true after grant
                 isRequestingHealthKit = false
             }
         }
@@ -587,10 +601,13 @@ struct PermissionsView: View {
             HKCategoryType.categoryType(forIdentifier: .sleepAnalysis)!,
             HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned)!
         ]
-        
+        for type in healthTypes {
+            print("[HealthKit] \(type.identifier): \(healthStore.authorizationStatus(for: type).rawValue)")
+        }
         healthKitAuthorized = healthTypes.allSatisfy { type in
             healthStore.authorizationStatus(for: type) == .sharingAuthorized
         }
+        print("[HealthKit] healthKitAuthorized: \(healthKitAuthorized)")
     }
 }
 
