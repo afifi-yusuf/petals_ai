@@ -33,6 +33,7 @@ class ChatbotViewModel: ObservableObject {
         Task {
             HealthDataManager.shared.requestHealthKitAuthorization()
             let healthSummary = await HealthDataManager.shared.getHealthSummary()
+            print(healthSummary)
             guard let todaysMood = moodManager.todaysMood else { return }
             
             currentSession = LanguageModelSession(instructions: """
@@ -118,7 +119,7 @@ class ChatbotViewModel: ObservableObject {
     }
     
     private func createNewSessionWithHistory(previousSession: LanguageModelSession) -> LanguageModelSession {
-        let allEntries = previousSession.transcript.entries
+        let allEntries = Array(previousSession.transcript)
         var condensedEntries = [Transcript.Entry]()
         
         // Keep the first entry (usually system instructions)
