@@ -179,7 +179,7 @@ class HealthDataManager {
         
         // If no data is available, return a helpful message
         if summaryParts.isEmpty {
-            return "No health data available today. Make sure to grant permissions and wear your Apple Watch or iPhone."
+            return "No health data available today."
         }
         
         return summaryParts.joined(separator: " | ")
