@@ -329,54 +329,36 @@ struct MeditationView: View {
             let healthSummary = await HealthDataManager.shared.getHealthSummary()
             
             let session = LanguageModelSession(instructions: """
-            You are generating a meditation script that will be spoken aloud. 
+            Write a gentle, imaginative story designed to help the listener relax and unwind.
+            Personalize the story’s tone and setting based on the following context, but do not provide any health, wellness, or therapeutic advice.
+            Do not mention or interpret the data as health advice.
+            This is for entertainment and relaxation only. Your story will be read aloud.
 
-            **CRITICAL RULES:**
-            - Start IMMEDIATELY with the meditation content
-            - Do NOT include any phrases like "Here's your meditation", "Certainly", "I'll create", etc.
-            - Do NOT include any titles, headers, or introductory text
-            - Do NOT include any closing phrases or explanations
-            - Do NOT respond to the prompt or acknowledge the request
-            - Output ONLY the meditation script that should be spoken
-            - Begin directly with the meditation content
-
-            **Script Requirements:**
-            - Word count: 700-800 words for a 5-minute meditation
-            - Start directly with: "Welcome to your meditation session..."
-            - Include natural pauses and breathing guidance
+            **Story Requirements:**
+            - The story must be at least 700 words long. If you have not reached this length, continue the story until you do.
+            - Fill the full 5 minutes with detailed, gentle narrative.
+            - Start directly with the story content. Do NOT include any section headers, titles, or introductory phrases such as 'introduction', 'intro', or 'welcome to this story'.
+            - Include natural pauses and breathing cues (e.g., "... and pause here for a moment ...", "Take a deep breath in... and release...")
             - Use conversational, warm, human-like language
-            - Include phrases like "Take a moment to..." and "When you're ready..."
-            - Add breathing cues: "Breathe in... and breathe out..."
-            - Use gentle transitions between sections
-            - End with gentle closing and return to awareness
+            - Use gentle transitions and mindful pacing
+            - End with a gentle closing and return to awareness
             - Tone: Calming, supportive, natural speech patterns
 
-            **Speech Patterns for Natural Delivery:**
-            - Include pauses: "... and pause here for a moment ..."
-            - Breathing guidance: "Take a deep breath in... hold it... and release..."
-            - Gentle transitions: "Now, when you're ready..."
-            - Mindful pacing: "Notice how you feel... take your time..."
-            - Warm encouragement: "That's right... you're doing beautifully..."
-
-            **Pause Markers (IMPORTANT):**
-            - Use "..." to create natural pauses that the speech synthesizer will respect
-            - Add "..." after sentences to create breathing space
-            - Use "..." before and after breathing guidance
-            - Add "..." at natural transition points
-            - Example: "Welcome to your meditation session... Take a moment to settle in... Now, when you're ready... take a deep breath in... and release..."
-
-            **User Context:**
+            **Personalization Context:**
             - Health Summary: \(healthSummary)
             - Current Mood: \(todaysMood.title) - \(todaysMood.description)
 
             **Structure (5 minutes total):**
             1. Welcome and settling (30 seconds) - ~75 words
-            2. Breathing guidance (1 minute) - ~150 words
-            3. Body scan and relaxation (2 minutes) - ~300 words
+            2. Breathing and relaxation guidance (1 minute) - ~150 words
+            3. Gentle body scan or relaxing imagery (2 minutes) - ~300 words
             4. Mindfulness and presence (1 minute) - ~150 words
             5. Gentle closing (30 seconds) - ~75 words
 
-            **BEGIN THE MEDITATION SCRIPT NOW, starting immediately with the welcome and using "..." for natural pauses:**
+            - Example of what NOT to do: Do not start with 'Introduction', 'Intro', 'Welcome to this story', or any similar phrase.
+            - Start directly with the story content, as if the listener is already relaxed and ready.
+
+            **BEGIN THE STORY NOW, starting immediately with the story content. Do NOT include any introductory phrases, titles, or headers. Avoid any health, wellness, or therapeutic advice. If you reach the end of your response and the story is not complete, continue the story in as much detail as possible.**
             """)
             
             let currentInput = "Generate meditation script."
