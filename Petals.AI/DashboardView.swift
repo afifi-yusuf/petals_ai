@@ -1,11 +1,3 @@
-//
-//  ContentView.swift
-//  Petals.AI
-//
-//  Created by Yusuf Afifi on 12/06/2025.
-// Rishi Ab
-//
-
 import SwiftUI
 import SwiftData
 import HealthKit
@@ -23,8 +15,18 @@ struct DashboardView: View {
     @State private var showingSubscription = false
     @State private var showingMeditation = false
     @State private var showingJournal = false
+    @State private var showingPermissions = false
+    @State private var healthKitAuthorized = false
+    @State private var hasInitialLoad = false
     @StateObject private var screenTimeManager = ScreenTimeManager.shared
     
+    var needsPermissions: Bool {
+        !healthKitAuthorized || !screenTimeManager.isAuthorized
+    }
+    
+    // Track if permissions have ever been granted
+    @State private var permissionsCompleted = false
+
     var body: some View {
         NavigationView {
             ZStack {
@@ -72,6 +74,30 @@ struct DashboardView: View {
                                 
                                 Spacer()
                                 
+                                // Permissions button (show only if not completed)
+                                if needsPermissions && !permissionsCompleted {
+                                    Button(action: {
+                                        showingPermissions = true
+                                    }) {
+                                        HStack(spacing: 6) {
+                                            Image(systemName: "lock.shield")
+                                                .font(.caption)
+                                            Text("Permissions")
+                                                .font(.caption)
+                                                .fontWeight(.medium)
+                                        }
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 6)
+                                        .background(Color.orange.opacity(0.15))
+                                        .foregroundColor(.orange)
+                                        .cornerRadius(12)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .stroke(Color.orange.opacity(0.3), lineWidth: 1)
+                                        )
+                                    }
+                                }
+                                
                                 #if DEBUG
                                 Button(action: {
                                     Task {
@@ -95,6 +121,13 @@ struct DashboardView: View {
                             }
                             .padding(.horizontal, 24)
                             .padding(.top, 8)
+                        }
+                        
+                        // Permissions Banner (show only if not completed)
+                        if needsPermissions && !permissionsCompleted {
+                            PermissionsBanner {
+                                showingPermissions = true
+                            }
                         }
                         
                         // Health Stats Section
@@ -275,9 +308,9 @@ struct DashboardView: View {
             .navigationBarHidden(true)
         }
         .onAppear {
-            Task {
-                HealthDataManager.shared.requestHealthKitAuthorization()
-                await fetchHealthData()
+            if !hasInitialLoad {
+                checkInitialPermissions()
+                hasInitialLoad = true
             }
         }
         .fullScreenCover(isPresented: $showingSubscription) {
@@ -289,17 +322,47 @@ struct DashboardView: View {
         .fullScreenCover(isPresented: $showingJournal) {
             JournalView()
         }
-        .alert("Screen Time Access", isPresented: $screenTimeManager.showingAuthorizationRequest) {
-            Button("Grant Access") {
-                Task {
-                    await screenTimeManager.requestAuthorization()
+        .sheet(isPresented: $showingPermissions, onDismiss: {
+            // Always re-check after sheet closes
+            checkInitialPermissions()
+            if !needsPermissions {
+                permissionsCompleted = true
+            }
+        }) {
+            PermissionsView(
+                healthKitAuthorized: $healthKitAuthorized,
+                onPermissionsGranted: {
+                    Task {
+                        await fetchHealthData()
+                        // If permissions are now granted, mark as completed
+                        if !needsPermissions {
+                            permissionsCompleted = true
+                        }
+                    }
                 }
+            )
+        }
+    }
+    
+    private func checkInitialPermissions() {
+        // Check if HealthKit is available and authorized
+        if HKHealthStore.isHealthDataAvailable() {
+            let healthTypes: Set<HKObjectType> = [
+                HKQuantityType.quantityType(forIdentifier: .stepCount)!,
+                HKQuantityType.quantityType(forIdentifier: .heartRate)!,
+                HKCategoryType.categoryType(forIdentifier: .mindfulSession)!,
+                HKCategoryType.categoryType(forIdentifier: .sleepAnalysis)!,
+                HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned)!
+            ]
+            
+            healthKitAuthorized = healthTypes.allSatisfy { type in
+                healthStore.authorizationStatus(for: type) == .sharingAuthorized
             }
-            Button("Not Now", role: .cancel) {
-                screenTimeManager.showingAuthorizationRequest = false
-            }
-        } message: {
-            Text("Petals.AI would like to access your Screen Time data to provide personalized digital wellness insights and suggest mindful breaks.")
+        }
+        
+        // Fetch initial data
+        Task {
+            await fetchHealthData()
         }
     }
     
@@ -310,16 +373,347 @@ struct DashboardView: View {
         sleepStatus = await HealthDataManager.shared.getSleepStatus()
         activeEnergyStatus = await HealthDataManager.shared.getActiveEnergyStatus()
         screenTimeStatus = await screenTimeManager.getScreenTimeStatus()
-        
-        // Request Screen Time authorization if not already granted
-        if !screenTimeManager.isAuthorized {
-            screenTimeManager.showingAuthorizationRequest = true
-        }
     }
 }
 
-// MARK: - Enhanced Components
+// MARK: - Permissions Banner (Dark Mode Fixed)
+struct PermissionsBanner: View {
+    let action: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
+    
+    var backgroundColor: Color {
+        colorScheme == .dark ?
+            Color.orange.opacity(0.15) :
+            Color.orange.opacity(0.1)
+    }
+    
+    var strokeColor: Color {
+        colorScheme == .dark ?
+            Color.orange.opacity(0.4) :
+            Color.orange.opacity(0.3)
+    }
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: "exclamationmark.shield.fill")
+                    .foregroundColor(.orange)
+                    .font(.title3)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Setup Required")
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
+                    
+                    Text("Grant permissions to unlock your wellness insights")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .foregroundColor(.orange)
+                    .font(.caption)
+                    .fontWeight(.medium)
+            }
+            .padding(20)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(backgroundColor)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(strokeColor, lineWidth: 1)
+                    )
+                    .shadow(color: colorScheme == .dark ? .clear : .orange.opacity(0.1), radius: 6, x: 0, y: 3)
+            )
+            .padding(.horizontal, 24)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
 
+// MARK: - Permissions View (Dark Mode Fixed)
+struct PermissionsView: View {
+    @Binding var healthKitAuthorized: Bool
+    let onPermissionsGranted: () -> Void
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
+    @StateObject private var screenTimeManager = ScreenTimeManager.shared
+    @State private var isRequestingHealthKit = false
+    @State private var isRequestingScreenTime = false
+    
+    var body: some View {
+        NavigationView {
+            ZStack {
+                // Adaptive background
+                (colorScheme == .dark ? Color.black : Color.white)
+                    .ignoresSafeArea()
+                
+                ScrollView {
+                    VStack(spacing: 32) {
+                        // Header
+                        VStack(spacing: 16) {
+                            ZStack {
+                                Circle()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [.purple.opacity(0.1), .blue.opacity(0.1)],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    .frame(width: 120, height: 120)
+                                
+                                Image(systemName: "heart.circle.fill")
+                                    .font(.system(size: 60))
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [.purple, .blue],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                            }
+                            
+                            Text("Enable Health Data")
+                                .font(.largeTitle)
+                                .fontWeight(.bold)
+                                .foregroundColor(.primary)
+                                .multilineTextAlignment(.center)
+                            
+                            Text("Grant permissions to get personalized wellness insights and track your progress")
+                                .font(.body)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 32)
+                        }
+                        .padding(.top, 40)
+                        
+                        VStack(spacing: 20) {
+                            // HealthKit Permission
+                            PermissionCard(
+                                title: "Health Data",
+                                description: "Steps, heart rate, sleep, and exercise data",
+                                icon: "heart.fill",
+                                color: .red,
+                                isGranted: healthKitAuthorized,
+                                isRequesting: isRequestingHealthKit
+                            ) {
+                                requestHealthKitPermission()
+                            }
+                            
+                            // Screen Time Permission
+                            PermissionCard(
+                                title: "Screen Time",
+                                description: "App usage and digital wellness insights",
+                                icon: "iphone",
+                                color: .orange,
+                                isGranted: screenTimeManager.isAuthorized,
+                                isRequesting: isRequestingScreenTime
+                            ) {
+                                requestScreenTimePermission()
+                            }
+                        }
+                        .padding(.horizontal, 24)
+                        
+                        Spacer()
+                        
+                        // Continue Button
+                        Button(action: {
+                            onPermissionsGranted()
+                            dismiss()
+                        }) {
+                            Text("Continue")
+                                .font(.headline)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 16)
+                                .background(
+                                    LinearGradient(
+                                        colors: [.purple, .blue],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .cornerRadius(16)
+                                .shadow(color: .purple.opacity(0.3), radius: 8, x: 0, y: 4)
+                        }
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, 30)
+                    }
+                }
+            }
+            .navigationTitle("Permissions")
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarBackButtonHidden(true)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Skip") {
+                        dismiss()
+                    }
+                    .foregroundColor(.primary)
+                }
+            }
+        }
+        .onAppear {
+            // No need to check HealthKit status for green tick anymore
+            screenTimeManager.checkAuthorizationStatus()
+        }
+    }
+    
+    private func requestHealthKitPermission() {
+        guard !isRequestingHealthKit else { return }
+        isRequestingHealthKit = true
+        Task {
+            await MainActor.run {
+                HealthDataManager.shared.requestHealthKitAuthorization()
+            }
+            // Wait a moment for the authorization to complete
+            try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
+            await MainActor.run {
+                healthKitAuthorized = true // Always set to true after grant
+                isRequestingHealthKit = false
+            }
+        }
+    }
+    
+    private func requestScreenTimePermission() {
+        guard !isRequestingScreenTime else { return }
+        isRequestingScreenTime = true
+        
+        Task {
+            await screenTimeManager.requestAuthorization()
+            await MainActor.run {
+                isRequestingScreenTime = false
+            }
+        }
+    }
+    
+    private func checkHealthKitStatus() {
+        let healthStore = HKHealthStore()
+        let healthTypes: Set<HKObjectType> = [
+            HKQuantityType.quantityType(forIdentifier: .stepCount)!,
+            HKQuantityType.quantityType(forIdentifier: .heartRate)!,
+            HKCategoryType.categoryType(forIdentifier: .mindfulSession)!,
+            HKCategoryType.categoryType(forIdentifier: .sleepAnalysis)!,
+            HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned)!
+        ]
+        for type in healthTypes {
+            print("[HealthKit] \(type.identifier): \(healthStore.authorizationStatus(for: type).rawValue)")
+        }
+        healthKitAuthorized = healthTypes.allSatisfy { type in
+            healthStore.authorizationStatus(for: type) == .sharingAuthorized
+        }
+        print("[HealthKit] healthKitAuthorized: \(healthKitAuthorized)")
+    }
+}
+
+// MARK: - Permission Card (Dark Mode Fixed)
+struct PermissionCard: View {
+    let title: String
+    let description: String
+    let icon: String
+    let color: Color
+    let isGranted: Bool
+    let isRequesting: Bool
+    let action: () -> Void
+    
+    @Environment(\.colorScheme) private var colorScheme
+    
+    var backgroundColor: Color {
+        colorScheme == .dark ?
+            Color.gray.opacity(0.15) :
+            Color.white.opacity(0.8)
+    }
+    
+    var strokeColor: Color {
+        if isGranted {
+            return color.opacity(0.6)
+        } else {
+            return colorScheme == .dark ?
+                Color.gray.opacity(0.3) :
+                Color.gray.opacity(0.2)
+        }
+    }
+    
+    var iconBackgroundColor: Color {
+        if isGranted {
+            return color.opacity(0.2)
+        } else {
+            return colorScheme == .dark ?
+                Color.gray.opacity(0.2) :
+                Color.gray.opacity(0.15)
+        }
+    }
+    
+    var body: some View {
+        HStack(spacing: 16) {
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundColor(isGranted ? color : (colorScheme == .dark ? .white.opacity(0.7) : .gray))
+                .frame(width: 40, height: 40)
+                .background(
+                    Circle()
+                        .fill(iconBackgroundColor)
+                )
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.primary)
+                
+                Text(description)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.leading)
+            }
+            
+            Spacer()
+            
+            if isRequesting {
+                ProgressView()
+                    .scaleEffect(0.8)
+                    .tint(.primary)
+            } else if isGranted {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(.green)
+                    .font(.title3)
+            } else {
+                Button("Grant", action: action)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(
+                        LinearGradient(
+                            colors: [color, color.opacity(0.8)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .cornerRadius(12)
+                    .shadow(color: color.opacity(0.3), radius: 4, x: 0, y: 2)
+            }
+        }
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(backgroundColor)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(strokeColor, lineWidth: 1)
+                )
+                .shadow(color: colorScheme == .dark ? .clear : .gray.opacity(0.1), radius: 8, x: 0, y: 4)
+        )
+    }
+}
+
+// MARK: - Enhanced Health Stat Card
 struct EnhancedHealthStatCard: View {
     let title: String
     let value: String
@@ -381,6 +775,7 @@ struct EnhancedHealthStatCard: View {
     }
 }
 
+// MARK: - Enhanced Meditation Card
 struct EnhancedMeditationCard: View {
     let title: String
     let duration: String
@@ -440,6 +835,7 @@ struct EnhancedMeditationCard: View {
     }
 }
 
+// MARK: - Enhanced Quick Action Button
 struct EnhancedQuickActionButton: View {
     let title: String
     let icon: String
