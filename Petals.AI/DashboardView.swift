@@ -18,6 +18,7 @@ struct DashboardView: View {
     @State private var showingPermissions = false
     @State private var healthKitAuthorized = false
     @State private var hasInitialLoad = false
+    @State private var showingWorkoutPlan = false
     @StateObject private var screenTimeManager = ScreenTimeManager.shared
     
     var needsPermissions: Bool {
@@ -289,6 +290,14 @@ struct DashboardView: View {
                                 }
                                 
                                 EnhancedQuickActionButton(
+                                    title: "Workout Plan",
+                                    icon: "figure.strengthtraining.traditional",
+                                    color: .red
+                                ) {
+                                    showingWorkoutPlan = true
+                                }
+                                
+                                EnhancedQuickActionButton(
                                     title: "Subscription",
                                     icon: "crown.fill",
                                     color: .orange
@@ -321,6 +330,9 @@ struct DashboardView: View {
         }
         .fullScreenCover(isPresented: $showingJournal) {
             JournalView()
+        }
+        .fullScreenCover(isPresented: $showingWorkoutPlan) {
+            WorkoutPlanView()
         }
         .sheet(isPresented: $showingPermissions, onDismiss: {
             // Always re-check after sheet closes
