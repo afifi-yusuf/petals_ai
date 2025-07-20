@@ -5,10 +5,9 @@ struct WorkoutPlanView: View {
     @StateObject private var viewModel = WorkoutPlanViewModel()
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
-    
+
     var body: some View {
         ZStack {
-            // Background gradient
             LinearGradient(
                 gradient: Gradient(colors: colorScheme == .dark ? [
                     Color.orange.opacity(0.2),
@@ -21,16 +20,11 @@ struct WorkoutPlanView: View {
                 ]),
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
-            
-            // Solid background overlay
-            Color(.systemBackground)
-                .ignoresSafeArea()
-            
+            ).ignoresSafeArea()
+            Color(.systemBackground).ignoresSafeArea()
+
             ScrollView {
                 VStack(spacing: 24) {
-                    // Header with back button
                     HStack {
                         Button(action: { dismiss() }) {
                             HStack(spacing: 8) {
@@ -46,13 +40,11 @@ struct WorkoutPlanView: View {
                             .background(Color(.systemGray5))
                             .cornerRadius(12)
                         }
-                        
                         Spacer()
                     }
                     .padding(.horizontal, 24)
                     .padding(.top, 8)
                     
-                    // Header with app icon
                     VStack(spacing: 16) {
                         Image("icon")
                             .resizable()
@@ -60,7 +52,7 @@ struct WorkoutPlanView: View {
                             .frame(width: 60, height: 60)
                             .clipShape(RoundedRectangle(cornerRadius: 16))
                             .shadow(color: .orange.opacity(0.3), radius: 8, x: 0, y: 4)
-                        
+
                         Text("AI Workout Planner")
                             .font(.title)
                             .fontWeight(.bold)
@@ -73,20 +65,21 @@ struct WorkoutPlanView: View {
                             )
                     }
                     .padding(.top, 20)
-                    
-                    // Current Workout Plan Display
-                    if let _ = viewModel.currentWeeklyPlan, !viewModel.isPlanExpired {
-                        existingPlanView
+
+                    if let plan = viewModel.structuredWorkoutPlan, !viewModel.isPlanExpired {
+                        existingPlanView(plan: plan)
                     } else {
                         configurationView
                     }
-                    
+
                     Spacer(minLength: 30)
                 }
             }
         }
         .sheet(isPresented: $viewModel.showFullPlan) {
-            WorkoutPlanDetailView(workoutPlan: viewModel.currentWeeklyPlan ?? "", parsedPlan: viewModel.parsedWorkoutPlan)
+            if let plan = viewModel.structuredWorkoutPlan {
+                WorkoutPlanDetailView(plan: plan)
+            }
         }
         .onAppear {
             viewModel.loadSavedPlan()
@@ -98,9 +91,8 @@ struct WorkoutPlanView: View {
             Text("This AI provides general fitness information only. Always consult with healthcare professionals before starting any exercise program. Listen to your body and stop if you feel pain or discomfort.")
         }
     }
-    
-    // MARK: - Subviews
-    private var existingPlanView: some View {
+
+    private func existingPlanView(plan: WorkoutPlan) -> some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Image(systemName: "calendar.badge.checkmark")
@@ -120,7 +112,7 @@ struct WorkoutPlanView: View {
                 }
             }
             .padding(.horizontal)
-            
+
             VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 4) {
                     Image(systemName: "checkmark.circle.fill")
@@ -134,7 +126,7 @@ struct WorkoutPlanView: View {
                 .background(Color(.systemGray6))
                 .cornerRadius(16)
                 .padding(.horizontal)
-                
+
                 Button(action: { viewModel.showFullPlan = true }) {
                     HStack(spacing: 12) {
                         Image(systemName: "doc.text.fill")
@@ -151,7 +143,7 @@ struct WorkoutPlanView: View {
                     .shadow(color: .orange.opacity(0.3), radius: 8, x: 0, y: 4)
                 }
                 .padding(.horizontal)
-                
+
                 Button(action: { viewModel.resetPlan() }) {
                     Text("Create New Guide")
                         .font(.subheadline)
@@ -167,7 +159,7 @@ struct WorkoutPlanView: View {
             }
         }
     }
-    
+
     private var configurationView: some View {
         VStack(alignment: .leading, spacing: 20) {
             VStack(alignment: .leading, spacing: 16) {
@@ -180,7 +172,7 @@ struct WorkoutPlanView: View {
                     Spacer()
                 }
                 .padding(.horizontal)
-                
+
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Image(systemName: "heart.text.square")
@@ -197,9 +189,8 @@ struct WorkoutPlanView: View {
                 .background(Color.blue.opacity(0.1))
                 .cornerRadius(12)
                 .padding(.horizontal)
-                
+
                 VStack(alignment: .leading, spacing: 20) {
-                    // Form sections
                     formSection(title: "Experience Level", icon: "figure.strengthtraining.traditional") {
                         Picker("Experience Level", selection: $viewModel.fitnessLevel) {
                             ForEach(FitnessLevel.allCases) { Text($0.rawValue).tag($0) }
@@ -230,8 +221,7 @@ struct WorkoutPlanView: View {
                     }
                 }
                 .padding(.horizontal)
-                
-                // Generate Button
+
                 Button(action: { viewModel.generateWorkoutPlan() }) {
                     HStack(spacing: 12) {
                         if viewModel.isLoading {
@@ -252,7 +242,7 @@ struct WorkoutPlanView: View {
                 }
                 .disabled(viewModel.isLoading)
                 .padding([.horizontal, .bottom])
-                
+
                 if let error = viewModel.errorMessage {
                     HStack {
                         Image(systemName: "exclamationmark.triangle.fill").foregroundColor(.red)
@@ -267,7 +257,7 @@ struct WorkoutPlanView: View {
             }
         }
     }
-    
+
     @ViewBuilder
     private func formSection<Content: View>(title: String, icon: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -283,13 +273,12 @@ struct WorkoutPlanView: View {
     }
 }
 
-// MARK: - Detail View
 struct WorkoutPlanDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
-    let workoutPlan: String
-    let parsedPlan: ParsedWorkoutPlan?
-    
+
+    let plan: WorkoutPlan
+
     var body: some View {
         NavigationView {
             ZStack {
@@ -299,26 +288,17 @@ struct WorkoutPlanDetailView: View {
                     endPoint: .bottomTrailing
                 ).ignoresSafeArea()
                 Color(.systemBackground).ignoresSafeArea()
-                
+
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
                         header.padding([.top, .horizontal])
-                        
-                        if let parsed = parsedPlan {
-                            planOverviewSection(parsed)
-                            
-                            ForEach(parsed.dailyWorkouts.indices, id: \.self) { index in
-                                dailyWorkoutCard(parsed.dailyWorkouts[index], dayNumber: index + 1)
-                            }
-                            
-                            if !parsed.progressionTips.isEmpty { progressionSection(parsed.progressionTips) }
-                            if !parsed.safetyGuidelines.isEmpty { safetySection(parsed.safetyGuidelines) }
-                            if !parsed.recoveryNutrition.isEmpty { recoverySection(parsed.recoveryNutrition) }
-                            
-                        } else {
-                            fallbackTextView
+                        planOverviewSection(plan)
+                        ForEach(plan.dailyWorkouts) { workout in
+                            dailyWorkoutCard(workout)
                         }
-                        
+                        if !plan.progressionTips.isEmpty { progressionSection(plan.progressionTips) }
+                        if !plan.safetyGuidelines.isEmpty { safetySection(plan.safetyGuidelines) }
+                        if !plan.recoveryNutrition.isEmpty { recoverySection(plan.recoveryNutrition) }
                         Spacer(minLength: 30)
                     }
                 }
@@ -327,8 +307,7 @@ struct WorkoutPlanDetailView: View {
             .overlay(alignment: .topTrailing) { closeButton }
         }
     }
-    
-    // MARK: - Detail Subviews
+
     private var header: some View {
         VStack(spacing: 16) {
             Image("icon").resizable().scaledToFit().frame(width: 50, height: 50).clipShape(RoundedRectangle(cornerRadius: 12))
@@ -341,7 +320,7 @@ struct WorkoutPlanDetailView: View {
         }
         .frame(maxWidth: .infinity)
     }
-    
+
     private var closeButton: some View {
         Button(action: { dismiss() }) {
             Image(systemName: "xmark.circle.fill")
@@ -351,276 +330,250 @@ struct WorkoutPlanDetailView: View {
         }
         .padding()
     }
-    
-    private var fallbackTextView: some View {
+
+    @ViewBuilder
+    private func planOverviewSection(_ plan: WorkoutPlan) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Workout Guide Content").font(.headline).foregroundColor(.orange)
-            Text(workoutPlan).font(.body)
+            Text("Guide Overview")
+                .font(.headline)
+                .foregroundColor(.orange)
+            LazyVGrid(columns: [
+                GridItem(.flexible()),
+                GridItem(.flexible())
+            ], spacing: 12) {
+                if !plan.fitnessLevel.isEmpty {
+                    overviewCard(title: "Level", value: plan.fitnessLevel, icon: "figure.strengthtraining.traditional")
+                }
+                if !plan.workoutType.isEmpty {
+                    overviewCard(title: "Type", value: plan.workoutType, icon: "dumbbell.fill")
+                }
+                if !plan.duration.isEmpty {
+                    overviewCard(title: "Duration", value: plan.duration, icon: "clock.fill")
+                }
+                if !plan.frequency.isEmpty {
+                    overviewCard(title: "Frequency", value: plan.frequency, icon: "calendar")
+                }
+                if !plan.goals.isEmpty {
+                    overviewCard(title: "Goals", value: plan.goals, icon: "target")
+                }
+            }
         }
         .padding()
         .background(Color(.systemGray6))
         .cornerRadius(16)
         .padding(.horizontal)
     }
-    
+
     @ViewBuilder
-        private func planOverviewSection(_ plan: ParsedWorkoutPlan) -> some View {
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Guide Overview")
-                    .font(.headline)
-                    .foregroundColor(.orange)
-                
-                LazyVGrid(columns: [
-                    GridItem(.flexible()),
-                    GridItem(.flexible())
-                ], spacing: 12) {
-                    if !plan.fitnessLevel.isEmpty {
-                        overviewCard(title: "Level", value: plan.fitnessLevel, icon: "figure.strengthtraining.traditional")
+    private func overviewCard(title: String, value: String, icon: String) -> some View {
+        VStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundColor(.orange)
+            Text(title)
+                .font(.caption)
+                .foregroundColor(.secondary)
+            Text(value)
+                .font(.footnote)
+                .fontWeight(.medium)
+                .foregroundColor(.primary)
+                .multilineTextAlignment(.center)
+        }
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity)
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+    }
+
+    @ViewBuilder
+    private func dailyWorkoutCard(_ workout: DailyWorkout) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(workout.title)
+                        .font(.headline)
+                        .foregroundColor(.orange)
+                    if !workout.focus.isEmpty {
+                        Text("Focus: \(workout.focus)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
-                    if !plan.workoutType.isEmpty {
-                        overviewCard(title: "Type", value: plan.workoutType, icon: "dumbbell.fill")
-                    }
-                    if !plan.duration.isEmpty {
-                        overviewCard(title: "Duration", value: plan.duration, icon: "clock.fill")
-                    }
-                    if !plan.frequency.isEmpty {
-                        overviewCard(title: "Frequency", value: plan.frequency, icon: "calendar")
+                }
+                Spacer()
+
+                if workout.isRestDay {
+                    Image(systemName: "bed.double.fill")
+                        .font(.title2)
+                        .foregroundColor(.blue)
+                } else {
+                    Image(systemName: "figure.strengthtraining.traditional")
+                        .font(.title2)
+                        .foregroundColor(.orange)
+                }
+            }
+
+            if !workout.exercises.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Suggested Activities")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(.primary)
+
+                    ForEach(workout.exercises) { exercise in
+                        exerciseRow(exercise)
                     }
                 }
             }
-            .padding()
-            .background(Color(.systemGray6))
-            .cornerRadius(16)
-            .padding(.horizontal)
-        }
-        
-        @ViewBuilder
-        private func overviewCard(title: String, value: String, icon: String) -> some View {
-            VStack(spacing: 4) {
-                Image(systemName: icon)
-                    .font(.title3)
-                    .foregroundColor(.orange)
-                Text(title)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                Text(value)
-                    .font(.footnote)
-                    .fontWeight(.medium)
-                    .foregroundColor(.primary)
-                    .multilineTextAlignment(.center)
-            }
-            .padding(.vertical, 8)
-            .frame(maxWidth: .infinity)
-            .background(Color(.systemBackground))
-            .cornerRadius(12)
-        }
-        
-        @ViewBuilder
-        private func dailyWorkoutCard(_ workout: DailyWorkout, dayNumber: Int) -> some View {
-            VStack(alignment: .leading, spacing: 16) {
-                // Day header
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Day \(dayNumber)")
-                            .font(.headline)
-                            .foregroundColor(.orange)
-                        if !workout.title.isEmpty {
-                            Text(workout.title)
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundColor(.primary)
-                        }
-                        if !workout.focus.isEmpty {
-                            Text("Focus: \(workout.focus)")
+
+            if !workout.restPeriod.isEmpty || !workout.notes.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    if !workout.restPeriod.isEmpty {
+                        HStack {
+                            Image(systemName: "timer")
+                                .font(.caption)
+                                .foregroundColor(.blue)
+                            Text("Suggested rest: \(workout.restPeriod)")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
                     }
-                    Spacer()
-                    
-                    if workout.isRestDay {
-                        Image(systemName: "bed.double.fill")
-                            .font(.title2)
-                            .foregroundColor(.blue)
-                    } else {
-                        Image(systemName: "figure.strengthtraining.traditional")
-                            .font(.title2)
-                            .foregroundColor(.orange)
-                    }
-                }
-                
-                // Exercises
-                if !workout.exercises.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Suggested Activities")
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                            .foregroundColor(.primary)
-                        
-                        ForEach(workout.exercises.indices, id: \.self) { index in
-                            exerciseRow(workout.exercises[index], index: index)
-                        }
-                    }
-                }
-                
-                // Rest periods and notes
-                if !workout.restPeriod.isEmpty || !workout.notes.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        if !workout.restPeriod.isEmpty {
-                            HStack {
-                                Image(systemName: "timer")
-                                    .font(.caption)
-                                    .foregroundColor(.blue)
-                                Text("Suggested rest: \(workout.restPeriod)")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                        if !workout.notes.isEmpty {
-                            HStack(alignment: .top) {
-                                Image(systemName: "info.circle")
-                                    .font(.caption)
-                                    .foregroundColor(.blue)
-                                Text(workout.notes)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
+                    if !workout.notes.isEmpty {
+                        HStack(alignment: .top) {
+                            Image(systemName: "info.circle")
+                                .font(.caption)
+                                .foregroundColor(.blue)
+                            Text(workout.notes)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
                         }
                     }
                 }
             }
-            .padding()
-            .background(Color(.systemGray6))
-            .cornerRadius(16)
-            .padding(.horizontal)
         }
-        
-        @ViewBuilder
-        private func exerciseRow(_ exercise: Exercise, index: Int) -> some View {
-            HStack(alignment: .top, spacing: 12) {
-                // Exercise number
-                Text("\(index + 1)")
-                    .font(.caption)
-                    .fontWeight(.bold)
-                    .foregroundColor(.white)
-                    .frame(width: 20, height: 20)
-                    .background(Color.orange)
-                    .clipShape(Circle())
-                
-                // Exercise details
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(exercise.name)
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundColor(.primary)
-                    
-                    if !exercise.setsReps.isEmpty {
-                        Text("Suggested: \(exercise.setsReps)")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    if !exercise.notes.isEmpty {
-                        Text(exercise.notes)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .italic()
-                    }
+        .padding()
+        .background(Color(.systemGray6))
+        .cornerRadius(16)
+        .padding(.horizontal)
+    }
+
+    @ViewBuilder
+    private func exerciseRow(_ exercise: Exercise) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text("") // For styling, add a bullet or badge if desired
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(exercise.name)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(.primary)
+
+                if !exercise.setsReps.isEmpty {
+                    Text("Suggested: \(exercise.setsReps)")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
-                
-                Spacer()
+                if !exercise.notes.isEmpty {
+                    Text(exercise.notes)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .italic()
+                }
             }
-            .padding(.vertical, 4)
+
+            Spacer()
         }
-        
-        @ViewBuilder
-        private func progressionSection(_ tips: [String]) -> some View {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Image(systemName: "chart.line.uptrend.xyaxis")
-                        .font(.headline)
+        .padding(.vertical, 4)
+    }
+
+    @ViewBuilder
+    private func progressionSection(_ tips: [String]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "chart.line.uptrend.xyaxis")
+                    .font(.headline)
+                    .foregroundColor(.green)
+                Text("Progression Ideas")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+            }
+
+            ForEach(tips.indices, id: \.self) { index in
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "lightbulb.fill")
+                        .font(.caption)
                         .foregroundColor(.green)
-                    Text("Progression Ideas")
-                        .font(.headline)
+                    Text(tips[index])
+                        .font(.subheadline)
                         .foregroundColor(.primary)
                 }
-                
-                ForEach(tips.indices, id: \.self) { index in
-                    HStack(alignment: .top, spacing: 8) {
-                        Image(systemName: "lightbulb.fill")
-                            .font(.caption)
-                            .foregroundColor(.green)
-                        Text(tips[index])
-                            .font(.subheadline)
-                            .foregroundColor(.primary)
-                    }
-                }
             }
-            .padding()
-            .background(Color(.systemGray6))
-            .cornerRadius(16)
-            .padding(.horizontal)
         }
-        
-        @ViewBuilder
-        private func safetySection(_ guidelines: [String]) -> some View {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Image(systemName: "shield.checkered")
-                        .font(.headline)
+        .padding()
+        .background(Color(.systemGray6))
+        .cornerRadius(16)
+        .padding(.horizontal)
+    }
+
+    @ViewBuilder
+    private func safetySection(_ guidelines: [String]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "shield.checkered")
+                    .font(.headline)
+                    .foregroundColor(.red)
+                Text("Safety Reminders")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+            }
+
+            ForEach(guidelines.indices, id: \.self) { index in
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "info.circle.fill")
+                        .font(.caption)
                         .foregroundColor(.red)
-                    Text("Safety Reminders")
-                        .font(.headline)
+                    Text(guidelines[index])
+                        .font(.subheadline)
                         .foregroundColor(.primary)
                 }
-                
-                ForEach(guidelines.indices, id: \.self) { index in
-                    HStack(alignment: .top, spacing: 8) {
-                        Image(systemName: "info.circle.fill")
-                            .font(.caption)
-                            .foregroundColor(.red)
-                        Text(guidelines[index])
-                            .font(.subheadline)
-                            .foregroundColor(.primary)
-                    }
-                }
             }
-            .padding()
-            .background(Color(.systemGray6))
-            .cornerRadius(16)
-            .padding(.horizontal)
         }
-        
-        @ViewBuilder
-        private func recoverySection(_ recovery: [String]) -> some View {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Image(systemName: "heart.text.square")
-                        .font(.headline)
+        .padding()
+        .background(Color(.systemGray6))
+        .cornerRadius(16)
+        .padding(.horizontal)
+    }
+
+    @ViewBuilder
+    private func recoverySection(_ recovery: [String]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "heart.text.square")
+                    .font(.headline)
+                    .foregroundColor(.blue)
+                Text("Recovery & Wellness")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+            }
+
+            ForEach(recovery.indices, id: \.self) { index in
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "heart.fill")
+                        .font(.caption)
                         .foregroundColor(.blue)
-                    Text("Recovery & Wellness")
-                        .font(.headline)
+                    Text(recovery[index])
+                        .font(.subheadline)
                         .foregroundColor(.primary)
                 }
-                
-                ForEach(recovery.indices, id: \.self) { index in
-                    HStack(alignment: .top, spacing: 8) {
-                        Image(systemName: "heart.fill")
-                            .font(.caption)
-                            .foregroundColor(.blue)
-                        Text(recovery[index])
-                            .font(.subheadline)
-                            .foregroundColor(.primary)
-                    }
-                }
             }
-            .padding()
-            .background(Color(.systemGray6))
-            .cornerRadius(16)
-            .padding(.horizontal)
         }
+        .padding()
+        .background(Color(.systemGray6))
+        .cornerRadius(16)
+        .padding(.horizontal)
+    }
 }
 
 #Preview {
     WorkoutPlanView()
 }
+
