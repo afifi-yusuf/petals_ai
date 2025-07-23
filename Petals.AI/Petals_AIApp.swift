@@ -37,21 +37,12 @@ struct Petals_AIApp: App {
         WindowGroup {
             if appState.isSignedIn {
                 ContentView()
-                    .onOpenURL { url in
-                        GIDSignIn.sharedInstance.handle(url)
-                    }
                     .environmentObject(appState)
                     .environmentObject(moodManager)
                     .fullScreenCover(isPresented: $moodManager.showingMoodPrompt) {
                         DailyMoodPromptView()
                     }
                     .modelContainer(for: JournalLogModel.self)
-            } else {
-                LoginView()
-                    .onOpenURL { url in
-                        GIDSignIn.sharedInstance.handle(url)
-                    }
-                    .environmentObject(appState)
             }
         }
     }

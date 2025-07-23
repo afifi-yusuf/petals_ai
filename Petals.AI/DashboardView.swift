@@ -25,334 +25,344 @@ struct DashboardView: View {
         !healthKitAuthorized || !screenTimeManager.isAuthorized
     }
     
+    @State private var isLoading = true
+    
     // Track if permissions have ever been granted
     @State private var permissionsCompleted = false
 
     var body: some View {
         NavigationView {
             ZStack {
-                // Background gradient
-                LinearGradient(
-                    gradient: Gradient(colors: [
-                        Color.purple.opacity(0.1),
-                        Color.blue.opacity(0.05),
-                        Color.white
-                    ]),
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
-                
-                ScrollView {
-                    VStack(spacing: 24) {
-                        // Header with Logo
-                        VStack(spacing: 16) {
-                            HStack {
-                                // Logo
-                                Image("icon")
-                                    .resizable()
-                                    .scaledToFit()
-                                    .frame(width: 50, height: 50)
-                                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                                    .shadow(color: .purple.opacity(0.3), radius: 4, x: 0, y: 2)
-                                
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("Petals AI")
-                                        .font(.title)
-                                        .fontWeight(.bold)
-                                        .foregroundStyle(
-                                            LinearGradient(
-                                                colors: [.purple, .blue],
-                                                startPoint: .leading,
-                                                endPoint: .trailing
-                                            )
-                                        )
-                                    
-                                    Text("Your wellness journey starts here")
-                                        .font(.subheadline)
-                                        .foregroundColor(.secondary)
-                                }
-                                
-                                Spacer()
-                                
-                                // Permissions button (show only if not completed)
-                                if needsPermissions && !permissionsCompleted {
-                                    Button(action: {
-                                        showingPermissions = true
-                                    }) {
-                                        HStack(spacing: 6) {
-                                            Image(systemName: "lock.shield")
-                                                .font(.caption)
-                                            Text("Permissions")
-                                                .font(.caption)
-                                                .fontWeight(.medium)
-                                        }
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 6)
-                                        .background(Color.orange.opacity(0.15))
-                                        .foregroundColor(.orange)
-                                        .cornerRadius(12)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .stroke(Color.orange.opacity(0.3), lineWidth: 1)
-                                        )
-                                    }
-                                }
-                                
-                                #if DEBUG
-                                Button(action: {
-                                    Task {
-                                        await HealthDataManager.shared.populateSampleData()
-                                        await fetchHealthData()
-                                    }
-                                }) {
-                                    Text("Debug")
-                                        .font(.system(size: 10, weight: .medium))
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 4)
-                                        .background(Color.red.opacity(0.1))
-                                        .foregroundColor(.red)
-                                        .cornerRadius(8)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 8)
-                                                .stroke(Color.red.opacity(0.3), lineWidth: 1)
-                                        )
-                                }
-                                #endif
-                            }
-                            .padding(.horizontal, 24)
-                            .padding(.top, 8)
-                        }
+                if isLoading{
+                    ProgressView("Loading...")
+                        .progressViewStyle(CircularProgressViewStyle(tint: .purple))
+                        .scaleEffect(1.5)
+                }else{
+                    ScrollView {
+                        // Background gradient
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color.purple.opacity(0.1),
+                                Color.blue.opacity(0.05),
+                                Color.white
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                        .ignoresSafeArea()
                         
-                        // Permissions Banner (show only if not completed)
-                        if needsPermissions && !permissionsCompleted {
-                            PermissionsBanner {
-                                showingPermissions = true
-                            }
-                        }
-                        
-                        // Health Stats Section
-                        VStack(alignment: .leading, spacing: 16) {
-                            HStack {
-                                Text("Today's Wellness")
-                                    .font(.title2)
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(.primary)
-                                
-                                Spacer()
-                                
-                                Button(action: {
-                                    Task {
-                                        await fetchHealthData()
-                                    }
-                                }) {
-                                    Image(systemName: "arrow.clockwise")
-                                        .font(.system(size: 16, weight: .medium))
-                                        .foregroundColor(.purple)
-                                }
-                            }
-                            .padding(.horizontal, 24)
-                            
-                            LazyVGrid(columns: [
-                                GridItem(.flexible()),
-                                GridItem(.flexible())
-                            ], spacing: 16) {
-                                EnhancedHealthStatCard(
-                                    title: "Steps",
-                                    value: stepsStatus?.message ?? "Loading...",
-                                    subtitle: stepsStatus?.hasData == true ? "steps today" : (stepsStatus?.suggestion ?? ""),
-                                    icon: "figure.walk",
-                                    gradientColors: [.blue, .cyan],
-                                    progress: stepsStatus?.hasData == true ? min(stepsStatus!.value / 10000, 1.0) : 0.0,
-                                    hasData: stepsStatus?.hasData ?? false
-                                )
-                                
-                                EnhancedHealthStatCard(
-                                    title: "Heart Rate",
-                                    value: heartRateStatus?.message ?? "Loading...",
-                                    subtitle: heartRateStatus?.hasData == true ? "BPM" : (heartRateStatus?.suggestion ?? ""),
-                                    icon: "heart.fill",
-                                    gradientColors: [.red, .pink],
-                                    progress: heartRateStatus?.hasData == true ? 0.75 : 0.0,
-                                    hasData: heartRateStatus?.hasData ?? false
-                                )
-                                
-                                EnhancedHealthStatCard(
-                                    title: "Mindfulness",
-                                    value: mindfulnessStatus?.message ?? "Loading...",
-                                    subtitle: mindfulnessStatus?.hasData == true ? "today" : (mindfulnessStatus?.suggestion ?? ""),
-                                    icon: "brain.head.profile",
-                                    gradientColors: [.mint, .green],
-                                    progress: mindfulnessStatus?.hasData == true ? min(mindfulnessStatus!.value / 30, 1.0) : 0.0,
-                                    hasData: mindfulnessStatus?.hasData ?? false
-                                )
-                                
-                                EnhancedHealthStatCard(
-                                    title: "Screen Time",
-                                    value: screenTimeStatus?.message ?? "Loading...",
-                                    subtitle: screenTimeStatus?.hasData == true ? "today" : (screenTimeStatus?.suggestion ?? ""),
-                                    icon: "iphone",
-                                    gradientColors: [.orange, .yellow],
-                                    progress: screenTimeStatus?.hasData == true ? min(screenTimeStatus!.value / (8 * 3600), 1.0) : 0.0,
-                                    hasData: screenTimeStatus?.hasData ?? false
-                                )
-                                
-                                EnhancedHealthStatCard(
-                                    title: "Sleep",
-                                    value: sleepStatus?.message ?? "Loading...",
-                                    subtitle: sleepStatus?.hasData == true ? "last night" : (sleepStatus?.suggestion ?? ""),
-                                    icon: "bed.double.fill",
-                                    gradientColors: [.indigo, .purple],
-                                    progress: sleepStatus?.hasData == true ? min(sleepStatus!.value / 8, 1.0) : 0.0,
-                                    hasData: sleepStatus?.hasData ?? false
-                                )
-                                
-                                EnhancedHealthStatCard(
-                                    title: "Energy",
-                                    value: activeEnergyStatus?.message ?? "Loading...",
-                                    subtitle: activeEnergyStatus?.hasData == true ? "kcal" : (activeEnergyStatus?.suggestion ?? ""),
-                                    icon: "flame.fill",
-                                    gradientColors: [.red, .orange],
-                                    progress: activeEnergyStatus?.hasData == true ? min(activeEnergyStatus!.value / 500, 1.0) : 0.0,
-                                    hasData: activeEnergyStatus?.hasData ?? false
-                                )
-                            }
-                            .padding(.horizontal, 24)
-                        }
-                        
-                        // Digital Wellness Insights
-                        if screenTimeManager.isAuthorized && screenTimeStatus?.hasData == true {
-                            VStack(alignment: .leading, spacing: 12) {
-                                Text("Digital Wellness")
-                                    .font(.title2)
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(.primary)
-                                    .padding(.horizontal, 24)
-                                
-                                VStack(spacing: 8) {
-                                    ForEach(screenTimeManager.getDigitalWellnessInsights(), id: \.self) { insight in
-                                        HStack {
-                                            Image(systemName: "lightbulb.fill")
-                                                .foregroundColor(.orange)
-                                                .font(.caption)
-                                            Text(insight)
+                        ScrollView {
+                            VStack(spacing: 24) {
+                                // Header with Logo
+                                VStack(spacing: 16) {
+                                    HStack {
+                                        // Logo
+                                        Image("icon")
+                                            .resizable()
+                                            .scaledToFit()
+                                            .frame(width: 50, height: 50)
+                                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                                            .shadow(color: .purple.opacity(0.3), radius: 4, x: 0, y: 2)
+                                        
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Petals AI")
+                                                .font(.title)
+                                                .fontWeight(.bold)
+                                                .foregroundStyle(
+                                                    LinearGradient(
+                                                        colors: [.purple, .blue],
+                                                        startPoint: .leading,
+                                                        endPoint: .trailing
+                                                    )
+                                                )
+                                            
+                                            Text("Your wellness journey starts here")
                                                 .font(.subheadline)
-                                                .foregroundColor(.primary)
-                                            Spacer()
+                                                .foregroundColor(.secondary)
                                         }
+                                        
+                                        Spacer()
+                                        
+                                        // Permissions button (show only if not completed)
+                                        if needsPermissions && !permissionsCompleted {
+                                            Button(action: {
+                                                showingPermissions = true
+                                            }) {
+                                                HStack(spacing: 6) {
+                                                    Image(systemName: "lock.shield")
+                                                        .font(.caption)
+                                                    Text("Permissions")
+                                                        .font(.caption)
+                                                        .fontWeight(.medium)
+                                                }
+                                                .padding(.horizontal, 12)
+                                                .padding(.vertical, 6)
+                                                .background(Color.orange.opacity(0.15))
+                                                .foregroundColor(.orange)
+                                                .cornerRadius(12)
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 12)
+                                                        .stroke(Color.orange.opacity(0.3), lineWidth: 1)
+                                                )
+                                            }
+                                        }
+                                        
+#if DEBUG
+                                        Button(action: {
+                                            Task {
+                                                await HealthDataManager.shared.populateSampleData()
+                                                await fetchHealthData()
+                                            }
+                                        }) {
+                                            Text("Debug")
+                                                .font(.system(size: 10, weight: .medium))
+                                                .padding(.horizontal, 8)
+                                                .padding(.vertical, 4)
+                                                .background(Color.red.opacity(0.1))
+                                                .foregroundColor(.red)
+                                                .cornerRadius(8)
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 8)
+                                                        .stroke(Color.red.opacity(0.3), lineWidth: 1)
+                                                )
+                                        }
+#endif
+                                    }
+                                    .padding(.horizontal, 24)
+                                    .padding(.top, 8)
+                                }
+                                
+                                // Permissions Banner (show only if not completed)
+                                if needsPermissions && !permissionsCompleted {
+                                    PermissionsBanner {
+                                        showingPermissions = true
+                                    }
+                                }
+                                
+                                // Health Stats Section
+                                VStack(alignment: .leading, spacing: 16) {
+                                    HStack {
+                                        Text("Today's Wellness")
+                                            .font(.title2)
+                                            .fontWeight(.semibold)
+                                            .foregroundColor(.primary)
+                                        
+                                        Spacer()
+                                        
+                                        Button(action: {
+                                            Task {
+                                                await fetchHealthData()
+                                            }
+                                        }) {
+                                            Image(systemName: "arrow.clockwise")
+                                                .font(.system(size: 16, weight: .medium))
+                                                .foregroundColor(.purple)
+                                        }
+                                    }
+                                    .padding(.horizontal, 24)
+                                    
+                                    LazyVGrid(columns: [
+                                        GridItem(.flexible()),
+                                        GridItem(.flexible())
+                                    ], spacing: 16) {
+                                        EnhancedHealthStatCard(
+                                            title: "Steps",
+                                            value: stepsStatus?.message ?? "Loading...",
+                                            subtitle: stepsStatus?.hasData == true ? "steps today" : (stepsStatus?.suggestion ?? ""),
+                                            icon: "figure.walk",
+                                            gradientColors: [.blue, .cyan],
+                                            progress: stepsStatus?.hasData == true ? min(stepsStatus!.value / 10000, 1.0) : 0.0,
+                                            hasData: stepsStatus?.hasData ?? false
+                                        )
+                                        
+                                        EnhancedHealthStatCard(
+                                            title: "Heart Rate",
+                                            value: heartRateStatus?.message ?? "Loading...",
+                                            subtitle: heartRateStatus?.hasData == true ? "BPM" : (heartRateStatus?.suggestion ?? ""),
+                                            icon: "heart.fill",
+                                            gradientColors: [.red, .pink],
+                                            progress: heartRateStatus?.hasData == true ? 0.75 : 0.0,
+                                            hasData: heartRateStatus?.hasData ?? false
+                                        )
+                                        
+                                        EnhancedHealthStatCard(
+                                            title: "Mindfulness",
+                                            value: mindfulnessStatus?.message ?? "Loading...",
+                                            subtitle: mindfulnessStatus?.hasData == true ? "today" : (mindfulnessStatus?.suggestion ?? ""),
+                                            icon: "brain.head.profile",
+                                            gradientColors: [.mint, .green],
+                                            progress: mindfulnessStatus?.hasData == true ? min(mindfulnessStatus!.value / 30, 1.0) : 0.0,
+                                            hasData: mindfulnessStatus?.hasData ?? false
+                                        )
+                                        
+                                        EnhancedHealthStatCard(
+                                            title: "Screen Time",
+                                            value: screenTimeStatus?.message ?? "Loading...",
+                                            subtitle: screenTimeStatus?.hasData == true ? "today" : (screenTimeStatus?.suggestion ?? ""),
+                                            icon: "iphone",
+                                            gradientColors: [.orange, .yellow],
+                                            progress: screenTimeStatus?.hasData == true ? min(screenTimeStatus!.value / (8 * 3600), 1.0) : 0.0,
+                                            hasData: screenTimeStatus?.hasData ?? false
+                                        )
+                                        
+                                        EnhancedHealthStatCard(
+                                            title: "Sleep",
+                                            value: sleepStatus?.message ?? "Loading...",
+                                            subtitle: sleepStatus?.hasData == true ? "last night" : (sleepStatus?.suggestion ?? ""),
+                                            icon: "bed.double.fill",
+                                            gradientColors: [.indigo, .purple],
+                                            progress: sleepStatus?.hasData == true ? min(sleepStatus!.value / 8, 1.0) : 0.0,
+                                            hasData: sleepStatus?.hasData ?? false
+                                        )
+                                        
+                                        EnhancedHealthStatCard(
+                                            title: "Energy",
+                                            value: activeEnergyStatus?.message ?? "Loading...",
+                                            subtitle: activeEnergyStatus?.hasData == true ? "kcal" : (activeEnergyStatus?.suggestion ?? ""),
+                                            icon: "flame.fill",
+                                            gradientColors: [.red, .orange],
+                                            progress: activeEnergyStatus?.hasData == true ? min(activeEnergyStatus!.value / 500, 1.0) : 0.0,
+                                            hasData: activeEnergyStatus?.hasData ?? false
+                                        )
+                                    }
+                                    .padding(.horizontal, 24)
+                                }
+                                
+                                // Digital Wellness Insights
+                                if screenTimeManager.isAuthorized && screenTimeStatus?.hasData == true {
+                                    VStack(alignment: .leading, spacing: 12) {
+                                        Text("Digital Wellness")
+                                            .font(.title2)
+                                            .fontWeight(.semibold)
+                                            .foregroundColor(.primary)
+                                            .padding(.horizontal, 24)
+                                        
+                                        VStack(spacing: 8) {
+                                            ForEach(screenTimeManager.getDigitalWellnessInsights(), id: \.self) { insight in
+                                                HStack {
+                                                    Image(systemName: "lightbulb.fill")
+                                                        .foregroundColor(.orange)
+                                                        .font(.caption)
+                                                    Text(insight)
+                                                        .font(.subheadline)
+                                                        .foregroundColor(.primary)
+                                                    Spacer()
+                                                }
+                                                .padding(.horizontal, 24)
+                                            }
+                                        }
+                                        .padding(.vertical, 12)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 16)
+                                                .fill(.ultraThinMaterial)
+                                                .shadow(color: .orange.opacity(0.1), radius: 8, x: 0, y: 4)
+                                        )
                                         .padding(.horizontal, 24)
                                     }
                                 }
-                                .padding(.vertical, 12)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .fill(.ultraThinMaterial)
-                                        .shadow(color: .orange.opacity(0.1), radius: 8, x: 0, y: 4)
-                                )
-                                .padding(.horizontal, 24)
+                                
+                                // Wellness Features
+                                VStack(alignment: .leading, spacing: 16) {
+                                    Text("Wellness Features")
+                                        .font(.title2)
+                                        .fontWeight(.bold)
+                                        .foregroundColor(.primary)
+                                        .padding(.horizontal, 24)
+                                    
+                                    LazyVGrid(columns: [
+                                        GridItem(.flexible()),
+                                        GridItem(.flexible())
+                                    ], spacing: 16) {
+                                        EnhancedQuickActionButton(
+                                            title: "Start Meditation",
+                                            icon: "brain.head.profile",
+                                            color: .purple
+                                        ) {
+                                            showingMeditation = true
+                                        }
+                                        
+                                        EnhancedQuickActionButton(
+                                            title: "Journal Entry",
+                                            icon: "book.fill",
+                                            color: .blue
+                                        ) {
+                                            showingJournal = true
+                                        }
+                                        
+                                        EnhancedQuickActionButton(
+                                            title: "Chat with AI",
+                                            icon: "message.fill",
+                                            color: .green
+                                        ) {
+                                            // Chat action
+                                        }
+                                        
+                                        EnhancedQuickActionButton(
+                                            title: "Workout Plan",
+                                            icon: "figure.strengthtraining.traditional",
+                                            color: .red
+                                        ) {
+                                            showingWorkoutPlan = true
+                                        }
+                                        
+                                        EnhancedQuickActionButton(
+                                            title: "Subscription",
+                                            icon: "crown.fill",
+                                            color: .orange
+                                        ) {
+                                            showingSubscription = true
+                                        }
+                                    }
+                                    .padding(.horizontal, 24)
+                                }
+                                
+                                // Bottom spacing
+                                Spacer(minLength: 30)
                             }
+                            .padding(.vertical, 16)
                         }
-                        
-                        // Wellness Features
-                        VStack(alignment: .leading, spacing: 16) {
-                            Text("Wellness Features")
-                                .font(.title2)
-                                .fontWeight(.bold)
-                                .foregroundColor(.primary)
-                                .padding(.horizontal, 24)
-                            
-                            LazyVGrid(columns: [
-                                GridItem(.flexible()),
-                                GridItem(.flexible())
-                            ], spacing: 16) {
-                                EnhancedQuickActionButton(
-                                    title: "Start Meditation",
-                                    icon: "brain.head.profile",
-                                    color: .purple
-                                ) {
-                                    showingMeditation = true
-                                }
-                                
-                                EnhancedQuickActionButton(
-                                    title: "Journal Entry",
-                                    icon: "book.fill",
-                                    color: .blue
-                                ) {
-                                    showingJournal = true
-                                }
-                                
-                                EnhancedQuickActionButton(
-                                    title: "Chat with AI",
-                                    icon: "message.fill",
-                                    color: .green
-                                ) {
-                                    // Chat action
-                                }
-                                
-                                EnhancedQuickActionButton(
-                                    title: "Workout Plan",
-                                    icon: "figure.strengthtraining.traditional",
-                                    color: .red
-                                ) {
-                                    showingWorkoutPlan = true
-                                }
-                                
-                                EnhancedQuickActionButton(
-                                    title: "Subscription",
-                                    icon: "crown.fill",
-                                    color: .orange
-                                ) {
-                                    showingSubscription = true
-                                }
-                            }
-                            .padding(.horizontal, 24)
-                        }
-                        
-                        // Bottom spacing
-                        Spacer(minLength: 30)
                     }
-                    .padding(.vertical, 16)
+                    .navigationBarHidden(true)
                 }
             }
-            .navigationBarHidden(true)
-        }
-        .onAppear {
-            if !hasInitialLoad {
+            .onAppear {
+                if !hasInitialLoad {
+                    checkInitialPermissions()
+                    hasInitialLoad = true
+                }
+            }
+            .fullScreenCover(isPresented: $showingSubscription) {
+                SubscriptionView()
+            }
+            .fullScreenCover(isPresented: $showingMeditation) {
+                MeditationView()
+            }
+            .fullScreenCover(isPresented: $showingJournal) {
+                JournalView()
+            }
+            .fullScreenCover(isPresented: $showingWorkoutPlan) {
+                WorkoutPlanView()
+            }
+            .sheet(isPresented: $showingPermissions, onDismiss: {
+                // Always re-check after sheet closes
                 checkInitialPermissions()
-                hasInitialLoad = true
-            }
-        }
-        .fullScreenCover(isPresented: $showingSubscription) {
-            SubscriptionView()
-        }
-        .fullScreenCover(isPresented: $showingMeditation) {
-            MeditationView()
-        }
-        .fullScreenCover(isPresented: $showingJournal) {
-            JournalView()
-        }
-        .fullScreenCover(isPresented: $showingWorkoutPlan) {
-            WorkoutPlanView()
-        }
-        .sheet(isPresented: $showingPermissions, onDismiss: {
-            // Always re-check after sheet closes
-            checkInitialPermissions()
-            if !needsPermissions {
-                permissionsCompleted = true
-            }
-        }) {
-            PermissionsView(
-                healthKitAuthorized: $healthKitAuthorized,
-                onPermissionsGranted: {
-                    Task {
-                        await fetchHealthData()
-                        // If permissions are now granted, mark as completed
-                        if !needsPermissions {
-                            permissionsCompleted = true
+                if !needsPermissions {
+                    permissionsCompleted = true
+                }
+            }) {
+                PermissionsView(
+                    healthKitAuthorized: $healthKitAuthorized,
+                    onPermissionsGranted: {
+                        Task {
+                            await fetchHealthData()
+                            // If permissions are now granted, mark as completed
+                            if !needsPermissions {
+                                permissionsCompleted = true
+                            }
                         }
                     }
-                }
-            )
+                )
+            }
         }
     }
     
@@ -375,6 +385,7 @@ struct DashboardView: View {
         // Fetch initial data
         Task {
             await fetchHealthData()
+            isLoading = false
         }
     }
     
