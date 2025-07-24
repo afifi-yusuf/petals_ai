@@ -21,6 +21,8 @@ struct DashboardView: View {
     @State private var showingWorkoutPlan = false
     @State private var showingNutritionPlan = false
     @StateObject private var screenTimeManager = ScreenTimeManager.shared
+    @Query(sort: \StreakLogModel.date, order: .reverse) var logs: [StreakLogModel]
+
     
     var needsPermissions: Bool {
         !healthKitAuthorized || !screenTimeManager.isAuthorized
@@ -72,6 +74,8 @@ struct DashboardView: View {
                                     Text("Your wellness journey starts here")
                                         .font(.subheadline)
                                         .foregroundColor(.secondary)
+                                    
+                                    Text("🔥" + String(getStreak()))
                                 }
                                 
                                 Spacer()
@@ -366,6 +370,10 @@ struct DashboardView: View {
                 }
             )
         }
+    }
+    
+    private func getStreak() -> Int {
+        return logs.first?.streak ?? 0
     }
     
     private func checkInitialPermissions() {
@@ -898,3 +906,4 @@ struct EnhancedQuickActionButton: View {
 #Preview {
     DashboardView()
 }
+
