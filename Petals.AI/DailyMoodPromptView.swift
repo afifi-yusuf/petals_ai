@@ -3,7 +3,7 @@ import SwiftUI
 struct DailyMoodPromptView: View {
     @ObservedObject var moodManager = MoodManager.shared
     @Environment(\.colorScheme) private var colorScheme
-    
+    @
     var body: some View {
         ZStack {
             // Background gradient
@@ -63,6 +63,7 @@ struct DailyMoodPromptView: View {
                     ForEach(MoodType.allCases, id: \.self) { mood in
                         DailyMoodCard(mood: mood) {
                             moodManager.setTodaysMood(mood)
+                            
                         }
                     }
                 }

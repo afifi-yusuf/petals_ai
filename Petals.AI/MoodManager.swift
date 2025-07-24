@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import SwiftData
 
 @MainActor
 class MoodManager: ObservableObject {
@@ -7,6 +8,8 @@ class MoodManager: ObservableObject {
     
     @Published var todaysMood: MoodType?
     @Published var showingMoodPrompt = false
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \StreakLogModel.date, order: .reverse) var logs: [StreakLogModel]
     
     private let userDefaults = UserDefaults.standard
     private let moodKey = "todaysMood"
@@ -39,6 +42,25 @@ class MoodManager: ObservableObject {
         userDefaults.set(mood.rawValue, forKey: moodKey)
         userDefaults.set(Date(), forKey: moodDateKey)
         showingMoodPrompt = false
+        
+        if let lastDate = logs.first?.date,
+           Calendar.current.isDate(lastDate, inSameDayAs: Date()) {
+            print("Already logged today")
+            return
+        }
+        
+        let lastDate = logs.first?.date
+        let curStreak = logs.first?.streak
+        let entry = StreakLogModel(lastDate: lastDate, lastStreak: curStreak ?? 0)
+        modelContext.insert(entry)
+        do{
+            try modelContext.save()
+            print("SAVED MOOD 😄")
+            
+        } catch {
+            print("Unable to save mood: \(error)")
+        }
+        
     }
     
     func getTodaysMood() -> MoodType? {
@@ -49,3 +71,4 @@ class MoodManager: ObservableObject {
         return todaysMood != nil
     }
 } 
+
