@@ -15,9 +15,15 @@ struct Petals_AIApp: App {
     @StateObject var moodManager = MoodManager.shared
     
     init() {
-        GIDSignIn.sharedInstance.configuration = GIDConfiguration(
-            clientID: "207124569970-gv87n0tk65h2klrip5f22umhi8f3bk7g.apps.googleusercontent.com"
-        )
+        if CommandLine.arguments.contains("--reset") {
+            print("🔥 --reset flag detected")
+            resetAppData()
+        }
+       
+    }
+    func resetAppData(){
+        UserDefaults.standard.removePersistentDomain(forName: Bundle.main.bundleIdentifier!)
+        UserDefaults.standard.synchronize()
     }
     
     var sharedModelContainer: ModelContainer = {
@@ -47,11 +53,7 @@ struct Petals_AIApp: App {
                     }
                     .modelContainer(for: JournalLogModel.self)
             } else {
-                LoginView()
-                    .onOpenURL { url in
-                        GIDSignIn.sharedInstance.handle(url)
-                    }
-                    .environmentObject(appState)
+                fatalError("ERROR")
             }
         }
     }

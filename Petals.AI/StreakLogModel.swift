@@ -14,13 +14,16 @@ class StreakLogModel {
     @Attribute var date: Date
     @Attribute var streak: Int
     
-    init(id: UUID = UUID(), date: Date = Date(), lastDate: Date?, lastStreak: Int = 0) {
+    init(id: UUID = UUID(), date: Date = Date(), lastDate: Date?, lastStreak: Int = 1) {
         self.id = id
         self.date = date
+        let lastDate = lastDate ?? Date()
         self.streak = StreakLogModel.calculateStreak(lastDate: lastDate, currentDate: date, currentStreak: lastStreak )
     }
     
     static func calculateStreak(lastDate: Date?, currentDate: Date, currentStreak: Int) -> Int {
+        print("Inside Streak Calculator 😄")
+        print(lastDate ?? "nil", currentDate, currentStreak)
         guard let lastDate = lastDate else {
             return 1
         }
@@ -32,10 +35,13 @@ class StreakLogModel {
         
         switch daysBetween {
         case 1:
+            print("Returning case 1 -> (\(currentStreak + 1))")
             return currentStreak + 1
         case 0:
+            print("Returning case 0: (\(currentStreak))")
             return currentStreak
         default:
+            print("Returning default: 1")
             return 1
         }
     }

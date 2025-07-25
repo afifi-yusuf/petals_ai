@@ -21,9 +21,9 @@ struct DashboardView: View {
     @State private var showingWorkoutPlan = false
     @State private var showingNutritionPlan = false
     @StateObject private var screenTimeManager = ScreenTimeManager.shared
-    @Query(sort: \StreakLogModel.date, order: .reverse) var logs: [StreakLogModel]
-
-    
+    @StateObject private var moodManager = MoodManager.shared
+    @Environment(\.modelContext) var modelContext
+    @State private var streak: Int = 0
     var needsPermissions: Bool {
         !healthKitAuthorized || !screenTimeManager.isAuthorized
     }
@@ -75,7 +75,8 @@ struct DashboardView: View {
                                         .font(.subheadline)
                                         .foregroundColor(.secondary)
                                     
-                                    Text("🔥" + String(getStreak()))
+                                    Text("🔥~\(moodManager.currentStreak)")
+                    
                                 }
                                 
                                 Spacer()
@@ -371,9 +372,18 @@ struct DashboardView: View {
             )
         }
     }
-    
-    private func getStreak() -> Int {
-        return logs.first?.streak ?? 0
+
+    func getLatestStreak() async {
+        do {
+            let logs = try modelContext.fetch(
+                FetchDescriptor<StreakLogModel>(sortBy: [.init(\.date, order: .reverse)])
+            )
+            print(logs)
+            streak = logs.first?.streak ?? -1
+        } catch {
+            print("Failed to fetch streak: \(error)")
+            streak = -2
+        }
     }
     
     private func checkInitialPermissions() {

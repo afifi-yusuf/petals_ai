@@ -8,7 +8,7 @@ class MoodManager: ObservableObject {
     
     @Published var todaysMood: MoodType?
     @Published var showingMoodPrompt = false
-    @Environment(\.modelContext) private var modelContext
+    @Published var currentStreak:Int = 0
     @Query(sort: \StreakLogModel.date, order: .reverse) var logs: [StreakLogModel]
     
     private let userDefaults = UserDefaults.standard
@@ -37,26 +37,24 @@ class MoodManager: ObservableObject {
         }
     }
     
-    func setTodaysMood(_ mood: MoodType) {
+    func setTodaysMood(_ mood: MoodType, in context: ModelContext) {
         todaysMood = mood
         userDefaults.set(mood.rawValue, forKey: moodKey)
         userDefaults.set(Date(), forKey: moodDateKey)
         showingMoodPrompt = false
         
-        if let lastDate = logs.first?.date,
-           Calendar.current.isDate(lastDate, inSameDayAs: Date()) {
-            print("Already logged today")
-            return
-        }
+
         
-        let lastDate = logs.first?.date
-        let curStreak = logs.first?.streak
-        let entry = StreakLogModel(lastDate: lastDate, lastStreak: curStreak ?? 0)
-        modelContext.insert(entry)
         do{
-            try modelContext.save()
-            print("SAVED MOOD 😄")
+            let logs = try context.fetch(FetchDescriptor<StreakLogModel>(sortBy: [.init(\.date, order: .reverse)]))
+            let lastDate = logs.first?.date
+            let curStreak = logs.first?.streak ?? 1
             
+            let entry = StreakLogModel(lastDate: lastDate, lastStreak: curStreak)
+            context.insert(entry)
+            try context.save()
+            print("SAVED MOOD 😄")
+            currentStreak = entry.streak
         } catch {
             print("Unable to save mood: \(error)")
         }
