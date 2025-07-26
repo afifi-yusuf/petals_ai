@@ -23,16 +23,16 @@ struct NutritionPlan: Codable {
 struct DailyMealPlan: Codable, Identifiable {
     var id: String = UUID().uuidString
     var title: String // Manually set, not by AI
-    @Guide(description: "A brief summary of the day's nutritional focus (e.g., 'High-Protein Energy', 'Anti-Inflammatory Recovery', 'Balanced Variety').")
+    @Guide(description: "A brief summary of the day's food theme.")
     var focus: String
     var meals: [Meal]
-    @Guide(description: "A daily hydration goal specific to this day's activities (e.g., '2.5 liters - extra water for workout day').")
+    @Guide(description: "A general water reminder for the day.")
     var hydrationGoal: String
-    @Guide(description: "Any special notes for the day (e.g., 'Great day for meal prep', 'Pack snacks for busy schedule').")
+    @Guide(description: "Simple cooking or timing notes.")
     var notes: String
-    @Guide(description: "Estimated total calories for all meals combined (e.g., '1850-2050 calories').")
+    @Guide(description: "General food quantity estimate.")
     var dailyCalorieEstimate: String
-    @Guide(description: "Key nutrients emphasized today (e.g., 'High in protein, vitamin C, omega-3s').")
+    @Guide(description: "Key food types emphasized today.")
     var keyNutrients: String
 }
 
@@ -43,33 +43,33 @@ struct Meal: Codable, Identifiable {
     var name: String
     var ingredients: String
     var notes: String
-    @Guide(description: "Brief preparation instructions or cooking method (e.g., 'Sauté for 5 mins', 'Blend until smooth').")
+    @Guide(description: "Simple cooking method.")
     var prepInstructions: String
-    @Guide(description: "Estimated calories for this meal (e.g., '350-400').")
+    @Guide(description: "Approximate food quantity.")
     var calorieEstimate: String
-    @Guide(description: "Estimated prep time in minutes (e.g., '15').")
+    @Guide(description: "Time needed for cooking.")
     var prepTime: String
 }
 
 @Generable()
 struct NutritionExtras: Codable {
-    @Guide(description: "A personalized daily calorie range based on the user's profile, goals, and activity level (e.g., '1800-2200 calories').")
+    @Guide(description: "General food quantity information.")
     var calorieRange: String
-    @Guide(description: "A list of 5-6 specific, actionable nutrition tips tailored to the user's dietary approach and goals.")
+    @Guide(description: "Basic cooking suggestions.")
     var nutritionTips: [String]
-    @Guide(description: "A list of 3 important safety guidelines, disclaimers, and when to consult professionals.")
+    @Guide(description: "General reminders about professional advice.")
     var safetyGuidelines: [String]
-    @Guide(description: "A list of 4 practical meal prep tips that work with the user's time constraints and cooking preferences.")
+    @Guide(description: "Simple cooking preparation ideas.")
     var mealPrepTips: [String]
-    @Guide(description: "A comprehensive weekly shopping list organized by food categories (produce, proteins, pantry items, etc.).")
+    @Guide(description: "Common grocery items organized by category.")
     var weeklyShoppingList: [String]
-    @Guide(description: "Personalized hydration guidance based on activity level and goals (e.g., 'Aim for 2.5-3L daily, more on workout days').")
+    @Guide(description: "Basic daily water suggestions.")
     var hydrationGuidance: String
-    @Guide(description: "Evidence-based supplement suggestions relevant to the user's goals and dietary approach, with safety notes.")
+    @Guide(description: "General information about common food additions.")
     var supplementSuggestions: [String]
 }
 
-// MARK: - Enums
+// MARK: - Enums (unchanged)
 
 enum DietaryApproach: String, CaseIterable, Identifiable {
     case balanced = "Balanced"
@@ -106,18 +106,18 @@ enum DietaryApproach: String, CaseIterable, Identifiable {
 }
 
 enum NutritionGoal: String, CaseIterable, Identifiable {
-    case weightLoss = "Weight Loss"
-    case weightGain = "Healthy Weight Gain"
-    case muscleBuilding = "Muscle Building"
-    case maintenance = "Weight Maintenance"
-    case energy = "Boost Energy Levels"
-    case health = "General Health & Wellness"
-    case performance = "Athletic Performance"
-    case digestiveHealth = "Digestive Health"
-    case heartHealth = "Heart Health"
-    case brainHealth = "Cognitive Function"
-    case immuneSupport = "Immune Support"
-    case hormonalBalance = "Hormonal Balance"
+    case weightManagement = "Weight Management"
+    case healthyLiving = "Healthy Living"
+    case muscleSupport = "Muscle Support"
+    case maintenance = "Maintenance"
+    case energy = "Energy Support"
+    case wellness = "General Wellness"
+    case fitness = "Fitness Support"
+    case digestiveWellness = "Digestive Wellness"
+    case heartWellness = "Heart Wellness"
+    case cognitiveSupport = "Cognitive Support"
+    case immuneWellness = "Immune Wellness"
+    case balance = "Hormonal Balance"
     
     var id: Self { self }
 }
@@ -180,13 +180,13 @@ class NutritionPlanViewModel: ObservableObject {
 
     // Simplified daily themes for variety
     private let dailyThemes = [
-        "Monday": ("Energy Focus", "Start week with energizing meals", "🔋"),
-        "Tuesday": ("Balanced Nutrition", "Steady energy throughout day", "⚖️"),
-        "Wednesday": ("Colorful Variety", "Mix of different foods", "🌈"),
-        "Thursday": ("Simple Prep", "Easy cooking methods", "👨‍🍳"),
-        "Friday": ("Light Options", "Lighter meal choices", "🥗"),
-        "Saturday": ("Fresh Ingredients", "Seasonal and fresh", "🌿"),
-        "Sunday": ("Meal Prep", "Prepare for the week", "📦")
+        "Monday": ("Fresh Start", "Begin week with good food", "🔋"),
+        "Tuesday": ("Mixed Variety", "Different food types", "⚖️"),
+        "Wednesday": ("Colorful Foods", "Various ingredients", "🌈"),
+        "Thursday": ("Simple Cooking", "Easy preparation", "👨‍🍳"),
+        "Friday": ("Light Foods", "Lighter options", "🥗"),
+        "Saturday": ("Seasonal Items", "Fresh ingredients", "🌿"),
+        "Sunday": ("Food Planning", "Prepare for week", "📦")
     ]
     
     // Simple variety helpers
@@ -212,19 +212,14 @@ class NutritionPlanViewModel: ObservableObject {
     }
     
     var estimatedCalorieNeeds: String {
-        // Simplified BMR calculation (Harris-Benedict)
-        let bmr: Double
-        if gender.lowercased() == "male" {
-            bmr = 88.362 + (13.397 * (Double(currentWeight) ?? 70)) + (4.799 * (age * 2.54)) - (5.677 * age)
-        } else {
-            bmr = 447.593 + (9.247 * (Double(currentWeight) ?? 60)) + (3.098 * (age * 2.54)) - (4.330 * age)
-        }
+        // Simplified calculation for reference only
+        let baseCalories = 1800.0
+        let adjustment = activityLevel.calorieMultiplier - 1.0
+        let adjusted = baseCalories + (baseCalories * adjustment * 0.2)
+        let lower = Int(adjusted * 0.9)
+        let upper = Int(adjusted * 1.1)
         
-        let tdee = bmr * activityLevel.calorieMultiplier
-        let lower = Int(tdee * 0.9)
-        let upper = Int(tdee * 1.1)
-        
-        return "\(lower)-\(upper) calories"
+        return "\(lower)-\(upper) calories (estimate only)"
     }
 
     func loadSavedPlan() {
@@ -240,7 +235,7 @@ class NutritionPlanViewModel: ObservableObject {
     func generateNutritionPlan() {
         isLoading = true
         errorMessage = nil
-        generationProgress = "Initializing..."
+        generationProgress = "Starting..."
         
         if !userDefaults.bool(forKey: disclaimerKey) {
             showHealthDisclaimer = true
@@ -255,50 +250,50 @@ class NutritionPlanViewModel: ObservableObject {
     }
 
     private func proceedWithGeneration() {
-        print("Starting enhanced nutrition plan generation...")
+        print("Starting nutrition meal planning...")
         Task {
             do {
                 await MainActor.run {
-                    self.generationProgress = "Creating personalized daily meal plans..."
+                    self.generationProgress = "Creating meal suggestions..."
                 }
                 
-                // Phase 1: Generate varied daily meal plans
+                // Phase 1: Generate daily meal suggestions with safer prompts
                 var dailyPlans: [DailyMealPlan] = []
                 let daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
                 
                 for (index, day) in daysOfWeek.enumerated() {
                     await MainActor.run {
-                        self.generationProgress = "Designing \(day)'s meals... (\(index + 1)/7)"
+                        self.generationProgress = "Planning \(day) meals... (\(index + 1)/7)"
                     }
                     
                     let session = LanguageModelSession()
-                    print("Generating enhanced plan for \(day) (day \(index + 1))...")
+                    print("Creating meal suggestions for \(day)...")
                     
-                    let prompt = createEnhancedDailyMealPrompt(for: day, dayIndex: index)
+                    let prompt = createSafeDailyMealPrompt(for: day, dayIndex: index)
                     let response = try await session.respond(to: prompt, generating: DailyMealPlan.self)
                     var plan = response.content
                     plan.title = day
                     dailyPlans.append(plan)
                     
-                    // Reduced delay
-                    try await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+                    // Brief pause between requests
+                    try await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds
                 }
                 
                 await MainActor.run {
-                    self.generationProgress = "Generating nutrition guidance and shopping list..."
+                    self.generationProgress = "Adding nutrition guidance..."
                 }
                 
-                // Phase 2: Generate comprehensive extras
-                print("Generating comprehensive nutrition extras...")
+                // Phase 2: Generate general nutrition guidance
+                print("Creating nutrition guidance...")
                 let extrasSession = LanguageModelSession()
-                let extrasPrompt = createComprehensiveExtrasPrompt()
+                let extrasPrompt = createSafeExtrasPrompt()
                 let extras = try await extrasSession.respond(to: extrasPrompt, generating: NutritionExtras.self).content
                 
                 await MainActor.run {
-                    self.generationProgress = "Finalizing your personalized nutrition plan..."
+                    self.generationProgress = "Finalizing meal plan..."
                 }
                 
-                // Phase 3: Assemble the comprehensive plan
+                // Phase 3: Assemble the plan
                 let finalPlan = NutritionPlan(
                     dietaryApproach: dietaryApproach.rawValue,
                     primaryGoal: primaryGoal.rawValue,
@@ -322,13 +317,13 @@ class NutritionPlanViewModel: ObservableObject {
                     self.userDefaults.set(Date(), forKey: self.planDateKey)
                     self.isLoading = false
                     self.generationProgress = ""
-                    print("Successfully generated and saved the comprehensive nutrition plan.")
+                    print("Successfully created meal plan suggestions.")
                 }
                 
             } catch {
                 await MainActor.run {
                     print("AI generation failed with error: \(error)")
-                    self.errorMessage = "Failed to generate your nutrition plan. Please check your connection and try again."
+                    self.errorMessage = "Failed to generate your nutrition plan. Please try again."
                     self.isLoading = false
                     self.generationProgress = ""
                 }
@@ -336,74 +331,37 @@ class NutritionPlanViewModel: ObservableObject {
         }
     }
 
-    private func createEnhancedDailyMealPrompt(for day: String, dayIndex: Int) -> String {
-        let (focus, _, _) = dailyThemes[day] ?? ("Balanced Nutrition", "Balanced meals", "🍽️")
+    private func createSafeDailyMealPrompt(for day: String, dayIndex: Int) -> String {
+        let (focus, _, _) = dailyThemes[day] ?? ("Balanced Variety", "Mixed food groups", "🍽️")
         
         var prompt = """
-        Create a meal plan for \(day). This is day \(dayIndex + 1) of a 7-day plan.
-        
-        User preferences:
-        - Diet: \(dietaryApproach.rawValue)
-        - Goal: \(primaryGoal.rawValue)
-        - Activity: \(activityLevel.rawValue)
-        - Meals per day: \(Int(mealsPerDay))
-        - Cooking time: \(Int(cookingTime)) minutes
-        """
-        
-        if !allergiesRestrictions.isEmpty {
-            prompt += "\n- Avoid: \(allergiesRestrictions)"
-        }
-        
-        if !customGoals.isEmpty {
-            prompt += "\n- Focus: \(customGoals)"
-        }
-        
-        prompt += """
-        
-        Day focus: \(focus)
-        
-        Please create varied meals that are different from other days. Include:
-        - Different cooking methods each day
-        - Varied ingredients and flavors
-        - Appropriate portions and prep instructions
-        """
-        
-        return prompt
-    }
-    
-    private func createComprehensiveExtrasPrompt() -> String {
-        var prompt = """
-        Create nutrition guidance for this profile:
-        
-        Diet: \(dietaryApproach.rawValue)
-        Goal: \(primaryGoal.rawValue)
-        Activity: \(activityLevel.rawValue)
-        Meals per day: \(Int(mealsPerDay))
+        Suggest \(Int(mealsPerDay)) food ideas for \(day) with a theme of: \(focus).
+
+        Food Style: \(dietaryApproach.rawValue)
         """
         
         if !allergiesRestrictions.isEmpty {
             prompt += "\nAvoid: \(allergiesRestrictions)"
         }
         
-        if !customGoals.isEmpty {
-            prompt += "\nFocus: \(customGoals)"
-        }
-        
         prompt += """
-        
-        Please provide:
-        1. Daily calorie range
-        2. 5 practical nutrition tips
-        3. 3 safety reminders about consulting professionals
-        4. 4 meal prep suggestions
-        5. Weekly shopping list by category
-        6. Daily water intake recommendation
-        7. General supplement considerations with safety notes
+
+        Provide a variety of ingredients and simple cooking methods.
         """
         
         return prompt
     }
+    
+    private func createSafeExtrasPrompt() -> String {
+        let prompt = """
+        Provide general food guidance for a \(dietaryApproach.rawValue) food style.
 
+        Include basic cooking tips and common grocery items.
+        """
+        
+        return prompt
+    }
+    
     func resetPlan() {
         structuredNutritionPlan = nil
         errorMessage = nil
@@ -421,26 +379,26 @@ class NutritionPlanViewModel: ObservableObject {
         guard let plan = structuredNutritionPlan else { return "" }
         
         var text = """
-        🍎 PERSONALIZED NUTRITION PLAN
+        🍎 MEAL PLANNING SUGGESTIONS
         Generated: \(Date().formatted(date: .abbreviated, time: .omitted))
         
-        📊 PROFILE OVERVIEW
-        • Dietary Approach: \(plan.dietaryApproach)
+        📊 PREFERENCES OVERVIEW
+        • Food Style: \(plan.dietaryApproach)
         • Primary Goal: \(plan.primaryGoal)
         • Activity Level: \(plan.activityLevel)
-        • Daily Calorie Range: \(plan.calorieRange)
+        • Calorie Reference: \(plan.calorieRange)
         • Meals Per Day: \(plan.mealsPerDay)
         
         """
         
-        // Add daily meal plans
+        // Add daily meal suggestions
         for dailyPlan in plan.dailyMealPlans {
             text += """
             
             📅 \(dailyPlan.title.uppercased())
-            Focus: \(dailyPlan.focus)
-            Daily Calories: \(dailyPlan.dailyCalorieEstimate)
-            Key Nutrients: \(dailyPlan.keyNutrients)
+            Theme: \(dailyPlan.focus)
+            Calorie Range: \(dailyPlan.dailyCalorieEstimate)
+            Key Foods: \(dailyPlan.keyNutrients)
             
             """
             
@@ -448,7 +406,7 @@ class NutritionPlanViewModel: ObservableObject {
                 text += """
                 \(meal.mealType): \(meal.name)
                 • Ingredients: \(meal.ingredients)
-                • Prep: \(meal.prepInstructions) (\(meal.prepTime) min)
+                • Preparation: \(meal.prepInstructions) (\(meal.prepTime))
                 • Calories: \(meal.calorieEstimate)
                 \(meal.notes.isEmpty ? "" : "• Notes: \(meal.notes)")
                 
@@ -457,23 +415,30 @@ class NutritionPlanViewModel: ObservableObject {
             
             text += """
             💧 Hydration: \(dailyPlan.hydrationGoal)
-            📝 Daily Notes: \(dailyPlan.notes)
+            📝 Notes: \(dailyPlan.notes)
             
             """
         }
         
         // Add additional sections
         if !plan.nutritionTips.isEmpty {
-            text += "\n💡 NUTRITION TIPS\n"
+            text += "\n💡 GENERAL NUTRITION SUGGESTIONS\n"
             for (index, tip) in plan.nutritionTips.enumerated() {
                 text += "\(index + 1). \(tip)\n"
             }
         }
         
         if !plan.weeklyShoppingList.isEmpty {
-            text += "\n🛒 WEEKLY SHOPPING LIST\n"
+            text += "\n🛒 SHOPPING SUGGESTIONS\n"
             for item in plan.weeklyShoppingList {
                 text += "• \(item)\n"
+            }
+        }
+        
+        if !plan.safetyGuidelines.isEmpty {
+            text += "\n⚠️ IMPORTANT REMINDERS\n"
+            for guideline in plan.safetyGuidelines {
+                text += "• \(guideline)\n"
             }
         }
         
