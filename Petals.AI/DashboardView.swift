@@ -12,7 +12,6 @@ struct DashboardView: View {
     @State private var activeEnergyStatus: HealthDataManager.HealthDataStatus?
     @State private var screenTimeStatus: HealthDataManager.HealthDataStatus?
     @State private var isLogoZoomed = false
-    @State private var showingSubscription = false
     @State private var showingMeditation = false
     @State private var showingJournal = false
     @State private var showingPermissions = false
@@ -288,14 +287,6 @@ struct DashboardView: View {
                                 }
                                 
                                 EnhancedQuickActionButton(
-                                    title: "Chat with AI",
-                                    icon: "message.fill",
-                                    color: .green
-                                ) {
-                                    // Chat action
-                                }
-                                
-                                EnhancedQuickActionButton(
                                     title: "Workout Plan",
                                     icon: "figure.strengthtraining.traditional",
                                     color: .red
@@ -311,13 +302,6 @@ struct DashboardView: View {
                                     showingNutritionPlan = true
                                 }
                                 
-                                EnhancedQuickActionButton(
-                                    title: "Subscription",
-                                    icon: "crown.fill",
-                                    color: .orange
-                                ) {
-                                    showingSubscription = true
-                                }
                             }
                             .padding(.horizontal, 24)
                         }
@@ -335,9 +319,6 @@ struct DashboardView: View {
                 checkInitialPermissions()
                 hasInitialLoad = true
             }
-        }
-        .fullScreenCover(isPresented: $showingSubscription) {
-            SubscriptionView()
         }
         .fullScreenCover(isPresented: $showingMeditation) {
             MeditationView()
@@ -916,4 +897,3 @@ struct EnhancedQuickActionButton: View {
 #Preview {
     DashboardView()
 }
-
