@@ -19,297 +19,73 @@ struct DashboardView: View {
     @State private var hasInitialLoad = false
     @State private var showingWorkoutPlan = false
     @State private var showingNutritionPlan = false
+    @State private var showingDigitalWellness = false
+    @State private var showHealthDetails = false
     @StateObject private var screenTimeManager = ScreenTimeManager.shared
     @StateObject private var moodManager = MoodManager.shared
     @Environment(\.modelContext) var modelContext
     @State private var streak: Int = 0
+    
     var needsPermissions: Bool {
         !healthKitAuthorized || !screenTimeManager.isAuthorized
     }
     
-    // Track if permissions have ever been granted
     @State private var permissionsCompleted = false
 
     var body: some View {
         NavigationView {
             ZStack {
-                // Background gradient
-                LinearGradient(
-                    gradient: Gradient(colors: [
-                        Color.purple.opacity(0.1),
-                        Color.blue.opacity(0.05),
-                        Color.white
-                    ]),
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
+                // Dynamic background with subtle animation
+                AnimatedBackground()
                 
                 ScrollView {
-                    VStack(spacing: 24) {
-                        // Header with Logo
-                        VStack(spacing: 16) {
-                            HStack {
-                                // Logo
-                                Image("icon")
-                                    .resizable()
-                                    .scaledToFit()
-                                    .frame(width: 50, height: 50)
-                                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                                    .shadow(color: .purple.opacity(0.3), radius: 4, x: 0, y: 2)
-                                
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("Petals AI")
-                                        .font(.title)
-                                        .fontWeight(.bold)
-                                        .foregroundStyle(
-                                            LinearGradient(
-                                                colors: [.purple, .blue],
-                                                startPoint: .leading,
-                                                endPoint: .trailing
-                                            )
-                                        )
-                                    
-                                    Text("Your wellness journey starts here")
-                                        .font(.subheadline)
-                                        .foregroundColor(.secondary)
-                                    
-                                    Text("🔥~\(moodManager.currentStreak)")
-                    
-                                }
-                                
-                                Spacer()
-                                
-                                // Permissions button (show only if not completed)
-                                if needsPermissions && !permissionsCompleted {
-                                    Button(action: {
-                                        showingPermissions = true
-                                    }) {
-                                        HStack(spacing: 6) {
-                                            Image(systemName: "lock.shield")
-                                                .font(.caption)
-                                            Text("Permissions")
-                                                .font(.caption)
-                                                .fontWeight(.medium)
-                                        }
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 6)
-                                        .background(Color.orange.opacity(0.15))
-                                        .foregroundColor(.orange)
-                                        .cornerRadius(12)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .stroke(Color.orange.opacity(0.3), lineWidth: 1)
-                                        )
-                                    }
-                                }
-                                
-                                #if DEBUG
-                                Button(action: {
-                                    Task {
-                                        await HealthDataManager.shared.populateSampleData()
-                                        await fetchHealthData()
-                                    }
-                                }) {
-                                    Text("Debug")
-                                        .font(.system(size: 10, weight: .medium))
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 4)
-                                        .background(Color.red.opacity(0.1))
-                                        .foregroundColor(.red)
-                                        .cornerRadius(8)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 8)
-                                                .stroke(Color.red.opacity(0.3), lineWidth: 1)
-                                        )
-                                }
-                                #endif
-                            }
-                            .padding(.horizontal, 24)
-                            .padding(.top, 8)
-                        }
+                    VStack(spacing: 20) {
+                        // Compact Header
+                        CompactHeader(
+                            streak: moodManager.currentStreak,
+                            needsPermissions: needsPermissions,
+                            permissionsCompleted: permissionsCompleted,
+                            showingPermissions: $showingPermissions
+                        )
                         
-                        // Permissions Banner (show only if not completed)
+                        // Permissions Banner (if needed)
                         if needsPermissions && !permissionsCompleted {
                             PermissionsBanner {
                                 showingPermissions = true
                             }
                         }
                         
-                        // Health Stats Section
-                        VStack(alignment: .leading, spacing: 16) {
-                            HStack {
-                                Text("Today's Wellness")
-                                    .font(.title2)
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(.primary)
-                                
-                                Spacer()
-                                
-                                Button(action: {
-                                    Task {
-                                        await fetchHealthData()
-                                    }
-                                }) {
-                                    Image(systemName: "arrow.clockwise")
-                                        .font(.system(size: 16, weight: .medium))
-                                        .foregroundColor(.purple)
-                                }
-                            }
-                            .padding(.horizontal, 24)
-                            
-                            LazyVGrid(columns: [
-                                GridItem(.flexible()),
-                                GridItem(.flexible())
-                            ], spacing: 16) {
-                                EnhancedHealthStatCard(
-                                    title: "Steps",
-                                    value: stepsStatus?.message ?? "Loading...",
-                                    subtitle: stepsStatus?.hasData == true ? "steps today" : (stepsStatus?.suggestion ?? ""),
-                                    icon: "figure.walk",
-                                    gradientColors: [.blue, .cyan],
-                                    progress: stepsStatus?.hasData == true ? min(stepsStatus!.value / 10000, 1.0) : 0.0,
-                                    hasData: stepsStatus?.hasData ?? false
-                                )
-                                
-                                EnhancedHealthStatCard(
-                                    title: "Heart Rate",
-                                    value: heartRateStatus?.message ?? "Loading...",
-                                    subtitle: heartRateStatus?.hasData == true ? "BPM" : (heartRateStatus?.suggestion ?? ""),
-                                    icon: "heart.fill",
-                                    gradientColors: [.red, .pink],
-                                    progress: heartRateStatus?.hasData == true ? 0.75 : 0.0,
-                                    hasData: heartRateStatus?.hasData ?? false
-                                )
-                                
-                                EnhancedHealthStatCard(
-                                    title: "Mindfulness",
-                                    value: mindfulnessStatus?.message ?? "Loading...",
-                                    subtitle: mindfulnessStatus?.hasData == true ? "today" : (mindfulnessStatus?.suggestion ?? ""),
-                                    icon: "brain.head.profile",
-                                    gradientColors: [.mint, .green],
-                                    progress: mindfulnessStatus?.hasData == true ? min(mindfulnessStatus!.value / 30, 1.0) : 0.0,
-                                    hasData: mindfulnessStatus?.hasData ?? false
-                                )
-                                
-                                EnhancedHealthStatCard(
-                                    title: "Screen Time",
-                                    value: screenTimeStatus?.message ?? "Loading...",
-                                    subtitle: screenTimeStatus?.hasData == true ? "today" : (screenTimeStatus?.suggestion ?? ""),
-                                    icon: "iphone",
-                                    gradientColors: [.orange, .yellow],
-                                    progress: screenTimeStatus?.hasData == true ? min(screenTimeStatus!.value / (8 * 3600), 1.0) : 0.0,
-                                    hasData: screenTimeStatus?.hasData ?? false
-                                )
-                                
-                                EnhancedHealthStatCard(
-                                    title: "Sleep",
-                                    value: sleepStatus?.message ?? "Loading...",
-                                    subtitle: sleepStatus?.hasData == true ? "last night" : (sleepStatus?.suggestion ?? ""),
-                                    icon: "bed.double.fill",
-                                    gradientColors: [.indigo, .purple],
-                                    progress: sleepStatus?.hasData == true ? min(sleepStatus!.value / 8, 1.0) : 0.0,
-                                    hasData: sleepStatus?.hasData ?? false
-                                )
-                                
-                                EnhancedHealthStatCard(
-                                    title: "Energy",
-                                    value: activeEnergyStatus?.message ?? "Loading...",
-                                    subtitle: activeEnergyStatus?.hasData == true ? "kcal" : (activeEnergyStatus?.suggestion ?? ""),
-                                    icon: "flame.fill",
-                                    gradientColors: [.red, .orange],
-                                    progress: activeEnergyStatus?.hasData == true ? min(activeEnergyStatus!.value / 500, 1.0) : 0.0,
-                                    hasData: activeEnergyStatus?.hasData ?? false
-                                )
-                            }
-                            .padding(.horizontal, 24)
-                        }
+                        // Hero Wellness Features - The main attraction
+                        WellnessFeaturesSection(
+                            showingMeditation: $showingMeditation,
+                            showingJournal: $showingJournal,
+                            showingWorkoutPlan: $showingWorkoutPlan,
+                            showingNutritionPlan: $showingNutritionPlan
+                        )
                         
-                        // Digital Wellness Insights
+                        // Quick Health Insights - Minimized but present
+                        QuickHealthInsights(
+                            stepsStatus: stepsStatus,
+                            heartRateStatus: heartRateStatus,
+                            mindfulnessStatus: mindfulnessStatus,
+                            sleepStatus: sleepStatus,
+                            showHealthDetails: $showHealthDetails,
+                            onRefresh: {
+                                Task { await fetchHealthData() }
+                            }
+                        )
+                        
+                        // Digital Wellness - Only if has data
                         if screenTimeManager.isAuthorized && screenTimeStatus?.hasData == true {
-                            VStack(alignment: .leading, spacing: 12) {
-                                Text("Digital Wellness")
-                                    .font(.title2)
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(.primary)
-                                    .padding(.horizontal, 24)
-                                
-                                VStack(spacing: 8) {
-                                    ForEach(screenTimeManager.getDigitalWellnessInsights(), id: \.self) { insight in
-                                        HStack {
-                                            Image(systemName: "lightbulb.fill")
-                                                .foregroundColor(.orange)
-                                                .font(.caption)
-                                            Text(insight)
-                                                .font(.subheadline)
-                                                .foregroundColor(.primary)
-                                            Spacer()
-                                        }
-                                        .padding(.horizontal, 24)
-                                    }
-                                }
-                                .padding(.vertical, 12)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .fill(.ultraThinMaterial)
-                                        .shadow(color: .orange.opacity(0.1), radius: 8, x: 0, y: 4)
-                                )
-                                .padding(.horizontal, 24)
+                            DigitalWellnessCard(screenTimeManager: screenTimeManager) {
+                                showingDigitalWellness = true
                             }
                         }
                         
-                        // Wellness Features
-                        VStack(alignment: .leading, spacing: 16) {
-                            Text("Wellness Features")
-                                .font(.title2)
-                                .fontWeight(.bold)
-                                .foregroundColor(.primary)
-                                .padding(.horizontal, 24)
-                            
-                            LazyVGrid(columns: [
-                                GridItem(.flexible()),
-                                GridItem(.flexible())
-                            ], spacing: 16) {
-                                EnhancedQuickActionButton(
-                                    title: "Start Meditation",
-                                    icon: "brain.head.profile",
-                                    color: .purple
-                                ) {
-                                    showingMeditation = true
-                                }
-                                
-                                EnhancedQuickActionButton(
-                                    title: "Journal Entry",
-                                    icon: "book.fill",
-                                    color: .blue
-                                ) {
-                                    showingJournal = true
-                                }
-                                
-                                EnhancedQuickActionButton(
-                                    title: "Workout Plan",
-                                    icon: "figure.strengthtraining.traditional",
-                                    color: .red
-                                ) {
-                                    showingWorkoutPlan = true
-                                }
-
-                                EnhancedQuickActionButton(
-                                    title: "Nutrition Plan",
-                                    icon: "leaf.fill",
-                                    color: .green
-                                ) {
-                                    showingNutritionPlan = true
-                                }
-                                
-                            }
-                            .padding(.horizontal, 24)
-                        }
-                        
-                        // Bottom spacing
-                        Spacer(minLength: 30)
+                        Spacer(minLength: 80)
                     }
-                    .padding(.vertical, 16)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 8)
                 }
             }
             .navigationBarHidden(true)
@@ -332,8 +108,10 @@ struct DashboardView: View {
         .fullScreenCover(isPresented: $showingNutritionPlan) {
             NutritionPlanView()
         }
+        .fullScreenCover(isPresented: $showingDigitalWellness) {
+            DigitalWellnessView()
+        }
         .sheet(isPresented: $showingPermissions, onDismiss: {
-            // Always re-check after sheet closes
             checkInitialPermissions()
             if !needsPermissions {
                 permissionsCompleted = true
@@ -344,11 +122,23 @@ struct DashboardView: View {
                 onPermissionsGranted: {
                     Task {
                         await fetchHealthData()
-                        // If permissions are now granted, mark as completed
                         if !needsPermissions {
                             permissionsCompleted = true
                         }
                     }
+                }
+            )
+        }
+        .sheet(isPresented: $showHealthDetails) {
+            DetailedHealthView(
+                stepsStatus: stepsStatus,
+                heartRateStatus: heartRateStatus,
+                mindfulnessStatus: mindfulnessStatus,
+                sleepStatus: sleepStatus,
+                activeEnergyStatus: activeEnergyStatus,
+                screenTimeStatus: screenTimeStatus,
+                onRefresh: {
+                    Task { await fetchHealthData() }
                 }
             )
         }
@@ -368,7 +158,6 @@ struct DashboardView: View {
     }
     
     private func checkInitialPermissions() {
-        // Check if HealthKit is available and authorized
         if HKHealthStore.isHealthDataAvailable() {
             let healthTypes: Set<HKObjectType> = [
                 HKQuantityType.quantityType(forIdentifier: .stepCount)!,
@@ -383,7 +172,6 @@ struct DashboardView: View {
             }
         }
         
-        // Fetch initial data
         Task {
             await fetchHealthData()
         }
@@ -399,6 +187,569 @@ struct DashboardView: View {
     }
 }
 
+// MARK: - Animated Background
+struct AnimatedBackground: View {
+    @State private var animate = false
+    
+    var body: some View {
+        ZStack {
+            // Base gradient
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    Color.purple.opacity(0.05),
+                    Color.blue.opacity(0.03),
+                    Color.mint.opacity(0.02),
+                    Color.white
+                ]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            
+            // Floating orbs
+            ForEach(0..<3, id: \.self) { i in
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [Color.purple.opacity(0.1), Color.clear],
+                            center: .center,
+                            startRadius: 10,
+                            endRadius: 100
+                        )
+                    )
+                    .frame(width: 200, height: 200)
+                    .offset(
+                        x: animate ? CGFloat.random(in: -50...50) : CGFloat.random(in: -30...30),
+                        y: animate ? CGFloat.random(in: -100...100) : CGFloat.random(in: -50...50)
+                    )
+                    .animation(
+                        Animation.easeInOut(duration: Double.random(in: 3...5))
+                            .repeatForever(autoreverses: true),
+                        value: animate
+                    )
+            }
+        }
+        .ignoresSafeArea()
+        .onAppear {
+            animate = true
+        }
+    }
+}
+
+// MARK: - Compact Header
+struct CompactHeader: View {
+    let streak: Int
+    let needsPermissions: Bool
+    let permissionsCompleted: Bool
+    @Binding var showingPermissions: Bool
+    
+    var body: some View {
+        HStack {
+            HStack(spacing: 12) {
+                Image("icon")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 40, height: 40)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .shadow(color: .purple.opacity(0.3), radius: 3, x: 0, y: 2)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Petals AI")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.purple, .blue],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                    
+                    HStack(spacing: 8) {
+                        Text("🔥 \(streak) day streak")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(.orange)
+                        
+                        Circle()
+                            .fill(Color.green)
+                            .frame(width: 6, height: 6)
+                        
+                        Text("All systems go")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+            
+            Spacer()
+            
+            if needsPermissions && !permissionsCompleted {
+                Button(action: {
+                    showingPermissions = true
+                }) {
+                    Image(systemName: "gear")
+                        .font(.title3)
+                        .foregroundColor(.orange)
+                        .padding(8)
+                        .background(
+                            Circle()
+                                .fill(Color.orange.opacity(0.1))
+                        )
+                }
+            }
+        }
+        .padding(.horizontal, 4)
+    }
+}
+
+// MARK: - Hero Wellness Features Section
+struct WellnessFeaturesSection: View {
+    @Binding var showingMeditation: Bool
+    @Binding var showingJournal: Bool
+    @Binding var showingWorkoutPlan: Bool
+    @Binding var showingNutritionPlan: Bool
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            HStack {
+                Text("Your Wellness Journey")
+                    .font(.title)
+                    .fontWeight(.bold)
+                    .foregroundColor(.primary)
+                
+                Spacer()
+                
+                Text("Start here")
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundColor(.purple)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .fill(Color.purple.opacity(0.1))
+                    )
+            }
+            
+            // Primary Feature Cards (2x2 grid)
+            LazyVGrid(columns: [
+                GridItem(.flexible(), spacing: 12),
+                GridItem(.flexible(), spacing: 12)
+            ], spacing: 16) {
+                
+                HeroFeatureCard(
+                    title: "Meditation",
+                    subtitle: "Find your center",
+                    icon: "brain.head.profile",
+                    gradientColors: [.purple, .indigo],
+                    action: { showingMeditation = true }
+                )
+                
+                HeroFeatureCard(
+                    title: "Journal",
+                    subtitle: "Express yourself",
+                    icon: "book.fill",
+                    gradientColors: [.blue, .cyan],
+                    action: { showingJournal = true }
+                )
+                
+                HeroFeatureCard(
+                    title: "Workout",
+                    subtitle: "Move your body",
+                    icon: "figure.strengthtraining.traditional",
+                    gradientColors: [.red, .orange],
+                    action: { showingWorkoutPlan = true }
+                )
+                
+                HeroFeatureCard(
+                    title: "Nutrition",
+                    subtitle: "Fuel properly",
+                    icon: "leaf.fill",
+                    gradientColors: [.green, .mint],
+                    action: { showingNutritionPlan = true }
+                )
+            }
+        }
+    }
+}
+
+// MARK: - Hero Feature Card
+struct HeroFeatureCard: View {
+    let title: String
+    let subtitle: String
+    let icon: String
+    let gradientColors: [Color]
+    let action: () -> Void
+    
+    @State private var isPressed = false
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 16) {
+                // Icon with background
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: gradientColors.map { $0.opacity(0.2) },
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 60, height: 60)
+                    
+                    Image(systemName: icon)
+                        .font(.system(size: 24, weight: .medium))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: gradientColors,
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                }
+                
+                VStack(spacing: 4) {
+                    Text(title)
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .foregroundColor(.primary)
+                    
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                
+                // Action indicator
+                HStack(spacing: 4) {
+                    Text("Start")
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                    
+                    Image(systemName: "arrow.right")
+                        .font(.caption2)
+                        .fontWeight(.bold)
+                }
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: gradientColors,
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+            }
+            .padding(.vertical, 24)
+            .padding(.horizontal, 16)
+            .background(
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(.ultraThinMaterial)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 24)
+                            .stroke(
+                                LinearGradient(
+                                    colors: gradientColors.map { $0.opacity(0.3) },
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1
+                            )
+                    )
+                    .shadow(
+                        color: gradientColors.first?.opacity(0.2) ?? .clear,
+                        radius: isPressed ? 8 : 12,
+                        x: 0,
+                        y: isPressed ? 4 : 8
+                    )
+            )
+            .scaleEffect(isPressed ? 0.95 : 1.0)
+            .animation(.easeInOut(duration: 0.1), value: isPressed)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .onPressGesture(
+            onPress: { isPressed = true },
+            onRelease: { isPressed = false }
+        )
+    }
+}
+
+// MARK: - Quick Health Insights (Minimized)
+struct QuickHealthInsights: View {
+    let stepsStatus: HealthDataManager.HealthDataStatus?
+    let heartRateStatus: HealthDataManager.HealthDataStatus?
+    let mindfulnessStatus: HealthDataManager.HealthDataStatus?
+    let sleepStatus: HealthDataManager.HealthDataStatus?
+    @Binding var showHealthDetails: Bool
+    let onRefresh: () -> Void
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Health Snapshot")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.secondary)
+                
+                Spacer()
+                
+                Button("View All") {
+                    showHealthDetails = true
+                }
+                .font(.caption)
+                .fontWeight(.medium)
+                .foregroundColor(.purple)
+            }
+            
+            HStack(spacing: 12) {
+                CompactHealthItem(
+                    icon: "figure.walk",
+                    value: stepsStatus?.hasData == true ? "\(Int(stepsStatus!.value))" : "—",
+                    color: .blue
+                )
+                
+                CompactHealthItem(
+                    icon: "heart.fill",
+                    value: heartRateStatus?.hasData == true ? "\(Int(heartRateStatus!.value))" : "—",
+                    color: .red
+                )
+                
+                CompactHealthItem(
+                    icon: "brain.head.profile",
+                    value: mindfulnessStatus?.hasData == true ? "\(Int(mindfulnessStatus!.value))m" : "—",
+                    color: .mint
+                )
+                
+                CompactHealthItem(
+                    icon: "bed.double.fill",
+                    value: sleepStatus?.hasData == true ? "\(String(format: "%.1f", sleepStatus!.value))h" : "—",
+                    color: .indigo
+                )
+                
+                Spacer()
+                
+                Button(action: onRefresh) {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .padding(8)
+                        .background(
+                            Circle()
+                                .fill(Color.secondary.opacity(0.1))
+                        )
+                }
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.secondary.opacity(0.1), lineWidth: 1)
+                )
+        )
+    }
+}
+
+// MARK: - Compact Health Item
+struct CompactHealthItem: View {
+    let icon: String
+    let value: String
+    let color: Color
+    
+    var body: some View {
+        VStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.caption)
+                .foregroundColor(color)
+            
+            Text(value)
+                .font(.caption2)
+                .fontWeight(.medium)
+                .foregroundColor(.primary)
+        }
+        .frame(width: 44)
+    }
+}
+
+// MARK: - Digital Wellness Card
+struct DigitalWellnessCard: View {
+    let screenTimeManager: ScreenTimeManager
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Image(systemName: "iphone")
+                        .foregroundColor(.orange)
+                    
+                    Text("Digital Balance")
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundColor(.orange)
+                        .fontWeight(.medium)
+                }
+                
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(Array(screenTimeManager.getDigitalWellnessInsights().prefix(2)), id: \.self) { insight in
+                        HStack(spacing: 8) {
+                            Circle()
+                                .fill(Color.orange.opacity(0.3))
+                                .frame(width: 4, height: 4)
+                            
+                            Text(insight)
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                            
+                            Spacer()
+                        }
+                    }
+                }
+                
+                HStack {
+                    Text("Tap to explore")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(.orange)
+                    
+                    Spacer()
+                }
+            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(.ultraThinMaterial)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.orange.opacity(0.2), lineWidth: 1)
+                    )
+                    .shadow(color: .orange.opacity(0.1), radius: 8, x: 0, y: 4)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+// MARK: - Detailed Health View
+struct DetailedHealthView: View {
+    let stepsStatus: HealthDataManager.HealthDataStatus?
+    let heartRateStatus: HealthDataManager.HealthDataStatus?
+    let mindfulnessStatus: HealthDataManager.HealthDataStatus?
+    let sleepStatus: HealthDataManager.HealthDataStatus?
+    let activeEnergyStatus: HealthDataManager.HealthDataStatus?
+    let screenTimeStatus: HealthDataManager.HealthDataStatus?
+    let onRefresh: () -> Void
+    
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                LazyVGrid(columns: [
+                    GridItem(.flexible()),
+                    GridItem(.flexible())
+                ], spacing: 16) {
+                    
+                    EnhancedHealthStatCard(
+                        title: "Steps",
+                        value: stepsStatus?.message ?? "Loading...",
+                        subtitle: stepsStatus?.hasData == true ? "steps today" : (stepsStatus?.suggestion ?? ""),
+                        icon: "figure.walk",
+                        gradientColors: [.blue, .cyan],
+                        progress: stepsStatus?.hasData == true ? min(stepsStatus!.value / 10000, 1.0) : 0.0,
+                        hasData: stepsStatus?.hasData ?? false
+                    )
+                    
+                    EnhancedHealthStatCard(
+                        title: "Heart Rate",
+                        value: heartRateStatus?.message ?? "Loading...",
+                        subtitle: heartRateStatus?.hasData == true ? "BPM" : (heartRateStatus?.suggestion ?? ""),
+                        icon: "heart.fill",
+                        gradientColors: [.red, .pink],
+                        progress: heartRateStatus?.hasData == true ? 0.75 : 0.0,
+                        hasData: heartRateStatus?.hasData ?? false
+                    )
+                    
+                    EnhancedHealthStatCard(
+                        title: "Mindfulness",
+                        value: mindfulnessStatus?.message ?? "Loading...",
+                        subtitle: mindfulnessStatus?.hasData == true ? "today" : (mindfulnessStatus?.suggestion ?? ""),
+                        icon: "brain.head.profile",
+                        gradientColors: [.mint, .green],
+                        progress: mindfulnessStatus?.hasData == true ? min(mindfulnessStatus!.value / 30, 1.0) : 0.0,
+                        hasData: mindfulnessStatus?.hasData ?? false
+                    )
+                    
+                    EnhancedHealthStatCard(
+                        title: "Screen Time",
+                        value: screenTimeStatus?.message ?? "Loading...",
+                        subtitle: screenTimeStatus?.hasData == true ? "today" : (screenTimeStatus?.suggestion ?? ""),
+                        icon: "iphone",
+                        gradientColors: [.orange, .yellow],
+                        progress: screenTimeStatus?.hasData == true ? min(screenTimeStatus!.value / (8 * 3600), 1.0) : 0.0,
+                        hasData: screenTimeStatus?.hasData ?? false
+                    )
+                    
+                    EnhancedHealthStatCard(
+                        title: "Sleep",
+                        value: sleepStatus?.message ?? "Loading...",
+                        subtitle: sleepStatus?.hasData == true ? "last night" : (sleepStatus?.suggestion ?? ""),
+                        icon: "bed.double.fill",
+                        gradientColors: [.indigo, .purple],
+                        progress: sleepStatus?.hasData == true ? min(sleepStatus!.value / 8, 1.0) : 0.0,
+                        hasData: sleepStatus?.hasData ?? false
+                    )
+                    
+                    EnhancedHealthStatCard(
+                        title: "Energy",
+                        value: activeEnergyStatus?.message ?? "Loading...",
+                        subtitle: activeEnergyStatus?.hasData == true ? "kcal" : (activeEnergyStatus?.suggestion ?? ""),
+                        icon: "flame.fill",
+                        gradientColors: [.red, .orange],
+                        progress: activeEnergyStatus?.hasData == true ? min(activeEnergyStatus!.value / 500, 1.0) : 0.0,
+                        hasData: activeEnergyStatus?.hasData ?? false
+                    )
+                }
+                .padding()
+            }
+            .navigationTitle("Health Details")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: onRefresh) {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Custom Button Style for Press Effect
+extension View {
+    func onPressGesture(onPress: @escaping () -> Void, onRelease: @escaping () -> Void) -> some View {
+        self.simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in onPress() }
+                .onEnded { _ in onRelease() }
+        )
+    }
+}
+
+// MARK: - Keep existing components
 // MARK: - Permissions Banner (Dark Mode Fixed)
 struct PermissionsBanner: View {
     let action: () -> Void
@@ -441,7 +792,7 @@ struct PermissionsBanner: View {
                     .font(.caption)
                     .fontWeight(.medium)
             }
-            .padding(20)
+            .padding(16)
             .background(
                 RoundedRectangle(cornerRadius: 16)
                     .fill(backgroundColor)
@@ -451,7 +802,6 @@ struct PermissionsBanner: View {
                     )
                     .shadow(color: colorScheme == .dark ? .clear : .orange.opacity(0.1), radius: 6, x: 0, y: 3)
             )
-            .padding(.horizontal, 24)
         }
         .buttonStyle(PlainButtonStyle())
     }
@@ -582,7 +932,6 @@ struct PermissionsView: View {
             }
         }
         .onAppear {
-            // No need to check HealthKit status for green tick anymore
             screenTimeManager.checkAuthorizationStatus()
         }
     }
@@ -594,10 +943,9 @@ struct PermissionsView: View {
             await MainActor.run {
                 HealthDataManager.shared.requestHealthKitAuthorization()
             }
-            // Wait a moment for the authorization to complete
-            try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
             await MainActor.run {
-                healthKitAuthorized = true // Always set to true after grant
+                healthKitAuthorized = true
                 isRequestingHealthKit = false
             }
         }
@@ -613,24 +961,6 @@ struct PermissionsView: View {
                 isRequestingScreenTime = false
             }
         }
-    }
-    
-    private func checkHealthKitStatus() {
-        let healthStore = HKHealthStore()
-        let healthTypes: Set<HKObjectType> = [
-            HKQuantityType.quantityType(forIdentifier: .stepCount)!,
-            HKQuantityType.quantityType(forIdentifier: .heartRate)!,
-            HKCategoryType.categoryType(forIdentifier: .mindfulSession)!,
-            HKCategoryType.categoryType(forIdentifier: .sleepAnalysis)!,
-            HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned)!
-        ]
-        for type in healthTypes {
-            print("[HealthKit] \(type.identifier): \(healthStore.authorizationStatus(for: type).rawValue)")
-        }
-        healthKitAuthorized = healthTypes.allSatisfy { type in
-            healthStore.authorizationStatus(for: type) == .sharingAuthorized
-        }
-        print("[HealthKit] healthKitAuthorized: \(healthKitAuthorized)")
     }
 }
 
@@ -798,101 +1128,137 @@ struct EnhancedHealthStatCard: View {
     }
 }
 
-// MARK: - Enhanced Meditation Card
-struct EnhancedMeditationCard: View {
+// MARK: - Digital Stat Card
+struct DigitalStatCard: View {
     let title: String
-    let duration: String
-    let description: String
+    let value: String
+    let subtitle: String
     let icon: String
-    let gradientColors: [Color]
+    let color: Color
+    let trend: TrendDirection
+    
+    enum TrendDirection {
+        case up, down, neutral
+        
+        var icon: String {
+            switch self {
+            case .up: return "arrow.up"
+            case .down: return "arrow.down"
+            case .neutral: return "minus"
+            }
+        }
+        
+        var color: Color {
+            switch self {
+            case .up: return .red
+            case .down: return .green
+            case .neutral: return .secondary
+            }
+        }
+    }
+    
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
-        Button(action: {
-            // Meditation action
-        }) {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Image(systemName: icon)
-                        .font(.title2)
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: gradientColors,
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                    
-                    Spacer()
-                    
-                    Text(duration)
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(
-                            Capsule()
-                                .fill(gradientColors.first?.opacity(0.2) ?? .gray.opacity(0.2))
-                        )
-                        .foregroundColor(gradientColors.first ?? .primary)
-                }
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: icon)
+                    .font(.title2)
+                    .foregroundColor(color)
                 
-                Text(title)
-                    .font(.headline)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.primary)
+                Spacer()
                 
-                Text(description)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.leading)
+                Image(systemName: trend.icon)
+                    .font(.caption)
+                    .fontWeight(.bold)
+                    .foregroundColor(trend.color)
             }
-            .padding(20)
-            .frame(width: 180, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(.ultraThinMaterial)
-                    .shadow(color: gradientColors.first?.opacity(0.2) ?? .gray.opacity(0.2), radius: 8, x: 0, y: 4)
-            )
+            
+            Text(value)
+                .font(.title)
+                .fontWeight(.bold)
+                .foregroundColor(.primary)
+            
+            Text(subtitle)
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.leading)
         }
-        .buttonStyle(PlainButtonStyle())
+        .padding(16)
+        .background(
+            (colorScheme == .dark ? Color(.secondarySystemBackground) : Color.white.opacity(0.95))
+                .cornerRadius(16)
+                .shadow(color: color.opacity(0.1), radius: 8, x: 0, y: 4)
+        )
     }
 }
 
-// MARK: - Enhanced Quick Action Button
-struct EnhancedQuickActionButton: View {
-    let title: String
-    let icon: String
+// MARK: - App Usage Row
+struct AppUsageRow: View {
+    let appName: String
+    let time: String
+    let percentage: Double
     let color: Color
-    let action: () -> Void
+    
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: 12) {
-                Image(systemName: icon)
-                    .font(.title2)
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [color, color.opacity(0.5)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                
-                Text(title)
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.primary)
-            }
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(.ultraThinMaterial)
-                    .shadow(color: color.opacity(0.1), radius: 6, x: 0, y: 3)
-            )
+        HStack(spacing: 12) {
+            Circle()
+                .fill(color)
+                .frame(width: 12, height: 12)
+            
+            Text(appName)
+                .font(.subheadline)
+                .foregroundColor(.primary)
+            
+            Spacer()
+            
+            Text(time)
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundColor(.secondary)
         }
-        .buttonStyle(PlainButtonStyle())
+        .padding(.vertical, 8)
+        .padding(.horizontal, 16)
+        .background(
+            (colorScheme == .dark ? Color(.secondarySystemBackground) : Color.white.opacity(0.95))
+                .cornerRadius(12)
+        )
     }
 }
+
+// MARK: - Insight Card
+struct InsightCard: View {
+    let insight: String
+    
+    @Environment(\.colorScheme) var colorScheme
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "lightbulb.fill")
+                .foregroundColor(.orange)
+                .font(.caption)
+            
+            Text(insight)
+                .font(.subheadline)
+                .foregroundColor(.primary)
+                .multilineTextAlignment(.leading)
+            
+            Spacer()
+        }
+        .padding(12)
+        .background(
+            (colorScheme == .dark ? Color(.secondarySystemBackground) : Color.white.opacity(0.95))
+                .cornerRadius(12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.orange.opacity(0.1), lineWidth: 1)
+                )
+        )
+    }
+}
+
 
 #Preview {
     DashboardView()

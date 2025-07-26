@@ -202,4 +202,4 @@ class ScreenTimeManager: ObservableObject {
             print("Failed to refresh Screen Time data: \(error)")
         }
     }
-} 
+}
