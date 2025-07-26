@@ -14,7 +14,7 @@ class ChatbotViewModel: ObservableObject {
     @Published var messages: [ChatMessage] = []
     @Published var inputMessage: String = ""
     @Published var isLoading: Bool = false
-    @StateObject private var moodManager = MoodManager.shared
+    private let moodManager = MoodManager.shared
     
     private var currentSession: LanguageModelSession?
     
@@ -31,10 +31,11 @@ class ChatbotViewModel: ObservableObject {
     
     private func initializeSession() {
         Task {
-            HealthDataManager.shared.requestHealthKitAuthorization()
+            await HealthDataManager.shared.requestHealthKitAuthorization()
             let healthSummary = await HealthDataManager.shared.getHealthSummary()
             print(healthSummary)
-            guard let todaysMood = moodManager.todaysMood else { return }
+            let todaysMood = await MainActor.run { moodManager.todaysMood }
+            guard let todaysMood = todaysMood else { return }
             
             currentSession = LanguageModelSession(instructions: """
             You are **Petal**, a kind health coach. Provide supportive, concise insights.
@@ -142,9 +143,10 @@ class ChatbotViewModel: ObservableObject {
     
     func refreshContext() {
         Task {
-            HealthDataManager.shared.requestHealthKitAuthorization()
+            await HealthDataManager.shared.requestHealthKitAuthorization()
             let healthSummary = await HealthDataManager.shared.getHealthSummary()
-            guard let todaysMood = moodManager.todaysMood else { return }
+            let todaysMood = await MainActor.run { moodManager.todaysMood }
+            guard let todaysMood = todaysMood else { return }
             
             currentSession = LanguageModelSession(instructions: """
             You are **Petal**, a kind health coach. Provide supportive, concise insights.
