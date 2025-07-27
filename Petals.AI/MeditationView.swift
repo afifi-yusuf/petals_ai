@@ -18,24 +18,32 @@ struct MeditationView: View {
     // Always use flow background audio
     private let backgroundAudioFileName = "flow"
     
+    // ENHANCED: Prioritize Enhanced Quality Voices
     private let availableVoices: [AVSpeechSynthesisVoice] = {
         let allVoices = AVSpeechSynthesisVoice.speechVoices()
         var englishVoices: [AVSpeechSynthesisVoice] = []
         
-        // Include all English voices (both enhanced and default quality)
-        for voice in allVoices {
-            if voice.language.hasPrefix("en-") {
-                englishVoices.append(voice)
-            }
+        // Prioritize enhanced quality voices first
+        let enhancedVoices = allVoices.filter {
+            $0.language.hasPrefix("en-") && $0.quality == .enhanced
         }
+        let defaultVoices = allVoices.filter {
+            $0.language.hasPrefix("en-") && $0.quality == .default
+        }
+        
+        // Add enhanced voices first, then default ones
+        englishVoices.append(contentsOf: enhancedVoices)
+        englishVoices.append(contentsOf: defaultVoices)
         
         return englishVoices
     }()
     
+    // ENHANCED: Better voice names with quality indicators
     private var voiceNames: [String] {
         return availableVoices.map { voice in
-            let qualityIndicator = voice.quality == .enhanced ? " ⭐️" : ""
-            return "\(voice.name)\(qualityIndicator)"
+            let qualityIndicator = voice.quality == .enhanced ? " ⭐️ Enhanced" : " Standard"
+            let languageCode = voice.language.replacingOccurrences(of: "en-", with: "")
+            return "\(voice.name) (\(languageCode))\(qualityIndicator)"
         }
     }
     
@@ -177,7 +185,6 @@ struct MeditationView: View {
                                 Spacer()
                                 
                                 if isGeneratingScript {
-
                                     ProgressView()
                                         .scaleEffect(0.8)
                                 }
@@ -242,6 +249,12 @@ struct MeditationView: View {
                         }
                     }
                     
+                    // Voice Quality Tips
+                    if availableVoices.filter({ $0.quality == .enhanced }).isEmpty {
+                        VoiceQualityTips()
+                            .padding(.horizontal)
+                    }
+                    
                     // Start Session Button
                     if moodManager.todaysMood != nil {
                         VStack(spacing: 16) {
@@ -249,9 +262,21 @@ struct MeditationView: View {
                             Button(action: { showingVoiceSelection = true }) {
                                 HStack(spacing: 8) {
                                     Image(systemName: "speaker.wave.2.circle.fill")
-                                    Text("Voice: \(availableVoices[selectedVoiceIndex].name)")
-                                        .lineLimit(1)
-                                        .truncationMode(.tail)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("Voice: \(availableVoices[selectedVoiceIndex].name)")
+                                            .lineLimit(1)
+                                            .truncationMode(.tail)
+                                        if availableVoices[selectedVoiceIndex].quality == .enhanced {
+                                            Text("⭐️ Enhanced Quality")
+                                                .font(.caption2)
+                                                .foregroundColor(.yellow)
+                                        } else {
+                                            Text("Standard Quality")
+                                                .font(.caption2)
+                                                .foregroundColor(.secondary)
+                                        }
+                                    }
+                                    Spacer()
                                     Image(systemName: "chevron.right")
                                         .font(.caption)
                                 }
@@ -298,7 +323,7 @@ struct MeditationView: View {
         }
         .fullScreenCover(isPresented: $showingSession) {
             MeditationSessionView(
-                meditationScript: generatedScript, 
+                meditationScript: generatedScript,
                 selectedVoiceIndex: selectedVoiceIndex,
                 backgroundAudioFileName: backgroundAudioFileName
             )
@@ -311,10 +336,9 @@ struct MeditationView: View {
             }
         }
         .sheet(isPresented: $showingVoiceSelection) {
-            VoiceSelectionView(
+            EnhancedVoiceSelectionView(
                 selectedVoiceIndex: $selectedVoiceIndex,
-                availableVoices: availableVoices,
-                voiceNames: availableVoices.map { $0.name }
+                availableVoices: availableVoices
             )
         }
     }
@@ -330,7 +354,7 @@ struct MeditationView: View {
             
             let session = LanguageModelSession(instructions: """
             Write a gentle, imaginative story designed to help the listener relax and unwind.
-            Personalize the story’s tone and setting based on the following context, but do not provide any health, wellness, or therapeutic advice.
+            Personalize the story's tone and setting based on the following context, but do not provide any health, wellness, or therapeutic advice.
             Do not mention or interpret the data as health advice.
             This is for entertainment and relaxation only. Your story will be read aloud.
 
@@ -430,16 +454,22 @@ struct MeditationSessionView: View {
     let selectedVoiceIndex: Int
     let backgroundAudioFileName: String
     
+    // ENHANCED: Prioritize Enhanced Quality Voices (same as MeditationView)
     private let availableVoices: [AVSpeechSynthesisVoice] = {
         let allVoices = AVSpeechSynthesisVoice.speechVoices()
         var englishVoices: [AVSpeechSynthesisVoice] = []
         
-        // Include all English voices (both enhanced and default quality)
-        for voice in allVoices {
-            if voice.language.hasPrefix("en-") {
-                englishVoices.append(voice)
-            }
+        // Prioritize enhanced quality voices first
+        let enhancedVoices = allVoices.filter {
+            $0.language.hasPrefix("en-") && $0.quality == .enhanced
         }
+        let defaultVoices = allVoices.filter {
+            $0.language.hasPrefix("en-") && $0.quality == .default
+        }
+        
+        // Add enhanced voices first, then default ones
+        englishVoices.append(contentsOf: enhancedVoices)
+        englishVoices.append(contentsOf: defaultVoices)
         
         return englishVoices
     }()
@@ -464,10 +494,10 @@ struct MeditationSessionView: View {
     var estimatedDuration: TimeInterval {
         // Estimate duration based on word count and speech rate
         // Base rate: 150 words per minute at normal speed
-        // With 0.7x rate: 150 * 0.7 = 105 words per minute
+        // With 0.65x rate: 150 * 0.65 = 97.5 words per minute
         // Add 20% for natural pauses, breathing, and meditation pacing
         let wordCount = meditationScript.split(separator: " ").count
-        let wordsPerMinute = 150.0 * 0.7 * 0.8 // Account for 0.7x speech rate + 20% pause time
+        let wordsPerMinute = 150.0 * 0.65 * 0.8 // Account for 0.65x speech rate + 20% pause time
         let estimatedMinutes = Double(wordCount) / wordsPerMinute
         
         // Round to nearest half minute (0.5 minute intervals)
@@ -508,10 +538,21 @@ struct MeditationSessionView: View {
                     
                     Spacer()
                     
-                    Text("Meditation Session")
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.primary)
+                    VStack(spacing: 2) {
+                        Text("Meditation Session")
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.primary)
+                        
+                        // Show voice quality indicator
+                        if selectedVoiceIndex < availableVoices.count {
+                            let voice = availableVoices[selectedVoiceIndex]
+                            let isEnhanced = (voice.quality == .enhanced)
+                            Text(isEnhanced ? "⭐️ Enhanced Voice" : "Standard Voice")
+                                .font(.caption)
+                                .foregroundColor(isEnhanced ? .yellow : .secondary)
+                        }
+                    }
                     
                     Spacer()
                 }
@@ -556,7 +597,7 @@ struct MeditationSessionView: View {
                     VStack(spacing: 8) {
                         ProgressView()
                             .scaleEffect(0.8)
-                        Text("Preparing audio...")
+                        Text("Preparing enhanced audio...")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                     }
@@ -642,12 +683,17 @@ struct MeditationSessionView: View {
         }
     }
     
+    // ENHANCED: Audio session optimized for speech
     private func setupAudioSession() {
         do {
-            // Configure audio session for mixing multiple audio sources
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
+            // Configure audio session for high-quality speech playback
+            try AVAudioSession.sharedInstance().setCategory(
+                .playback,
+                mode: .spokenAudio,  // Key: This mode is optimized for speech
+                options: [.allowBluetooth, .allowAirPlay, .mixWithOthers]
+            )
             try AVAudioSession.sharedInstance().setActive(true)
-            print("✅ Audio session configured for mixing")
+            print("✅ Audio session configured for enhanced speech")
         } catch {
             print("Failed to setup audio session: \(error)")
         }
@@ -659,54 +705,88 @@ struct MeditationSessionView: View {
             return
         }
         
-        print("🎵 Generating audio for meditation...")
+        print("🎵 Generating enhanced audio for meditation...")
         isGeneratingAudio = true
         
         await MainActor.run {
             self.isAudioReady = true
             self.isGeneratingAudio = false
-            print("✅ Audio ready for playback")
+            print("✅ Enhanced audio ready for playback")
         }
     }
     
-    private func startPlayback() {
-        guard !meditationScript.isEmpty else { 
-            print("❌ Cannot start playback: script is empty")
-            return 
+    // ENHANCED: Natural text processing for better speech
+    private func enhanceTextWithNaturalPauses(_ text: String) -> String {
+        var enhancedText = text
+        
+        // Add natural pauses and breathing cues for meditation
+        let replacements: [(String, String)] = [
+            ("Take a deep breath", "Take a deep breath... "),
+            ("breathe in", "breathe in... "),
+            ("breathe out", "breathe out... "),
+            ("relax", "relax... "),
+            ("let go", "let go... "),
+            (". ", "... "),
+            ("pause here", "pause here... "),
+            ("moment", "moment... ")
+        ]
+        
+        for (original, replacement) in replacements {
+            enhancedText = enhancedText.replacingOccurrences(of: original, with: replacement, options: .caseInsensitive)
         }
         
-        print("🎵 Starting meditation playback...")
+        return enhancedText
+    }
+    
+    // ENHANCED: Optimized utterance creation
+    private func createOptimizedUtterance(text: String) -> AVSpeechUtterance {
+        let enhancedText = enhanceTextWithNaturalPauses(text)
+        let utterance = AVSpeechUtterance(string: enhancedText)
         
-        // Ensure audio session is active
+        // Use the selected voice (ensure it's within bounds)
+        let voiceIndex = min(selectedVoiceIndex, availableVoices.count - 1)
+        utterance.voice = availableVoices[voiceIndex]
+        
+        // Optimal settings for natural meditation speech
+        utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 0.65  // Slower for meditation
+        utterance.pitchMultiplier = 0.95  // Slightly lower pitch sounds more calming
+        utterance.volume = 0.9  // Leave some headroom
+        
+        // Natural pacing for meditation
+        utterance.preUtteranceDelay = 1.5
+        utterance.postUtteranceDelay = 1.0
+        
+        return utterance
+    }
+    
+    // ENHANCED: Improved playback with better speech settings
+    private func startPlayback() {
+        guard !meditationScript.isEmpty else {
+            print("❌ Cannot start playback: script is empty")
+            return
+        }
+        
+        print("🎵 Starting enhanced meditation playback...")
+        
+        // Ensure audio session is active with speech optimization
         do {
             try AVAudioSession.sharedInstance().setActive(true)
-            print("✅ Audio session activated")
+            print("✅ Audio session activated for speech")
         } catch {
             print("❌ Failed to activate audio session: \(error)")
         }
         
-        // Create speech utterance with proper configuration
-        let utterance = AVSpeechUtterance(string: meditationScript)
+        // Create optimized speech utterance
+        let utterance = createOptimizedUtterance(text: meditationScript)
         
-        // Set the voice - ensure it's within bounds
-        let voiceIndex = min(selectedVoiceIndex, availableVoices.count - 1)
-        utterance.voice = availableVoices[voiceIndex]
-        
-        // Configure utterance properties according to Apple documentation
-        utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 0.7 // More natural rate for meditation
-        utterance.pitchMultiplier = 1.0
-        utterance.volume = 1.0
-        utterance.preUtteranceDelay = 1.0 // 1 second pause before starting
-        utterance.postUtteranceDelay = 0.5 // 0.5 second pause after finishing
-        
-        print("🔊 Speech utterance created with voice: \(utterance.voice?.name ?? "Unknown")")
-        print("🎤 Starting speech synthesis...")
+        print("🔊 Using voice: \(utterance.voice?.name ?? "Unknown") (Quality: \(utterance.voice?.quality == .enhanced ? "Enhanced" : "Default"))")
+        print("🎤 Starting enhanced speech synthesis...")
         
         synthesizer.speak(utterance)
         isPlaying = true
         startTimer()
         startBackgroundAudio()
-        print("✅ Playback started successfully")
+        print("✅ Enhanced playback started successfully")
     }
     
     private func pausePlayback() {
@@ -743,14 +823,14 @@ struct MeditationSessionView: View {
     private func setupSpeechDelegate() {
         speechDelegate = SpeechSynthesizerDelegate(
             onStart: {
-                print("🎵 Speech started")
+                print("🎵 Enhanced speech started")
             },
             onFinish: {
                 DispatchQueue.main.async {
                     self.isPlaying = false
                     self.stopTimer()
                     self.stopBackgroundAudio()
-                    print("✅ Speech finished - Total time: \(Int(self.currentTime)) seconds")
+                    print("✅ Enhanced speech finished - Total time: \(Int(self.currentTime)) seconds")
                 }
             }
         )
@@ -766,6 +846,7 @@ struct MeditationSessionView: View {
         do {
             backgroundAudioPlayer = try AVAudioPlayer(contentsOf: url)
             backgroundAudioPlayer?.numberOfLoops = -1 // Infinite loop
+            backgroundAudioPlayer?.volume = backgroundVolume
             backgroundAudioPlayer?.prepareToPlay()
             print("🎵 Background audio loaded successfully")
         } catch {
@@ -864,11 +945,15 @@ enum MoodType: String, CaseIterable {
     }
 }
 
-struct VoiceSelectionView: View {
+// ENHANCED: Voice Selection View with Preview and Better Quality Indicators
+struct EnhancedVoiceSelectionView: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var selectedVoiceIndex: Int
     let availableVoices: [AVSpeechSynthesisVoice]
-    let voiceNames: [String]
+    @State private var previewingVoice: Int? = nil
+    @State private var previewSynthesizer = AVSpeechSynthesizer()
+    
+    private let previewText = "Welcome to your meditation session. Let's take a moment to breathe deeply and relax."
     
     private var enhancedVoices: [(index: Int, voice: AVSpeechSynthesisVoice)] {
         return availableVoices.enumerated()
@@ -886,12 +971,45 @@ struct VoiceSelectionView: View {
         NavigationView {
             List {
                 Section {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Voice Quality Guide")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                        
+                        HStack(spacing: 4) {
+                            Image(systemName: "star.fill")
+                                .foregroundColor(.yellow)
+                            Text("Enhanced Quality")
+                                .font(.subheadline)
+                                .foregroundColor(.primary)
+                            Text("- Best for meditation")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        HStack(spacing: 4) {
+                            Image(systemName: "speaker.wave.2")
+                                .foregroundColor(.blue)
+                            Text("Standard Quality")
+                                .font(.subheadline)
+                                .foregroundColor(.primary)
+                            Text("- Basic system voice")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .padding(.vertical, 8)
+                } header: {
+                    Text("About Voice Quality")
+                }
+                
+                Section {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Current Voice")
                             .font(.headline)
                             .foregroundColor(.primary)
                         
-                        if !availableVoices.isEmpty {
+                        if !availableVoices.isEmpty && selectedVoiceIndex < availableVoices.count {
                             HStack {
                                 Text(availableVoices[selectedVoiceIndex].name)
                                     .font(.subheadline)
@@ -900,7 +1018,7 @@ struct VoiceSelectionView: View {
                                 Spacer()
                                 
                                 if availableVoices[selectedVoiceIndex].quality == .enhanced {
-                                    Label("Premium", systemImage: "star.fill")
+                                    Label("Enhanced", systemImage: "star.fill")
                                         .font(.caption)
                                         .foregroundColor(.yellow)
                                         .padding(.horizontal, 8)
@@ -924,40 +1042,52 @@ struct VoiceSelectionView: View {
                 if !enhancedVoices.isEmpty {
                     Section {
                         ForEach(enhancedVoices, id: \.voice.identifier) { index, voice in
-                            VoiceRow(
-                                name: voice.name,
-                                language: voice.language,
-                                isPremium: true,
-                                isSelected: selectedVoiceIndex == index
+                            VoiceRowWithPreview(
+                                voice: voice,
+                                index: index,
+                                isSelected: selectedVoiceIndex == index,
+                                isPreviewingThis: previewingVoice == index,
+                                onSelect: {
+                                    selectedVoiceIndex = index
+                                    dismiss()
+                                },
+                                onPreview: {
+                                    if previewingVoice == index {
+                                        stopPreview()
+                                    } else {
+                                        previewVoice(at: index)
+                                    }
+                                }
                             )
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                selectedVoiceIndex = index
-                                dismiss()
-                            }
                         }
                     } header: {
-                        Text("Premium Voices")
+                        Text("Enhanced Voices")
                             .textCase(.uppercase)
                     } footer: {
-                        Text("Enhanced quality voices for the best meditation experience")
+                        Text("Enhanced quality voices provide the most natural meditation experience")
                     }
                 }
                 
                 if !standardVoices.isEmpty {
                     Section {
                         ForEach(standardVoices, id: \.voice.identifier) { index, voice in
-                            VoiceRow(
-                                name: voice.name,
-                                language: voice.language,
-                                isPremium: false,
-                                isSelected: selectedVoiceIndex == index
+                            VoiceRowWithPreview(
+                                voice: voice,
+                                index: index,
+                                isSelected: selectedVoiceIndex == index,
+                                isPreviewingThis: previewingVoice == index,
+                                onSelect: {
+                                    selectedVoiceIndex = index
+                                    dismiss()
+                                },
+                                onPreview: {
+                                    if previewingVoice == index {
+                                        stopPreview()
+                                    } else {
+                                        previewVoice(at: index)
+                                    }
+                                }
                             )
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                selectedVoiceIndex = index
-                                dismiss()
-                            }
                         }
                     } header: {
                         Text("Standard Voices")
@@ -987,6 +1117,13 @@ struct VoiceSelectionView: View {
                         }
                         .padding(.vertical, 8)
                     }
+                } else {
+                    // Voice quality tips section
+                    Section {
+                        VoiceQualityTips()
+                    } header: {
+                        Text("Tips for Better Experience")
+                    }
                 }
             }
             .navigationTitle("Voice Settings")
@@ -994,11 +1131,122 @@ struct VoiceSelectionView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
+                        stopPreview()
                         dismiss()
                     }
                 }
             }
         }
+        .onDisappear {
+            stopPreview()
+        }
+    }
+    
+    private func previewVoice(at index: Int) {
+        stopPreview()
+        previewingVoice = index
+        
+        let utterance = AVSpeechUtterance(string: previewText)
+        utterance.voice = availableVoices[index]
+        utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 0.65
+        utterance.pitchMultiplier = 0.95
+        utterance.volume = 0.9
+        
+        previewSynthesizer.speak(utterance)
+    }
+    
+    private func stopPreview() {
+        previewSynthesizer.stopSpeaking(at: .immediate)
+        previewingVoice = nil
+    }
+}
+
+struct VoiceRowWithPreview: View {
+    let voice: AVSpeechSynthesisVoice
+    let index: Int
+    let isSelected: Bool
+    let isPreviewingThis: Bool
+    let onSelect: () -> Void
+    let onPreview: () -> Void
+    
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 8) {
+                    Text(voice.name)
+                        .foregroundColor(isSelected ? .purple : .primary)
+                        .fontWeight(isSelected ? .semibold : .regular)
+                    
+                    if voice.quality == .enhanced {
+                        Label("Enhanced", systemImage: "star.fill")
+                            .font(.caption)
+                            .foregroundColor(.yellow)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.yellow.opacity(0.2))
+                            .cornerRadius(8)
+                    }
+                }
+                
+                Text(voice.language)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            
+            Spacer()
+            
+            Button(action: onPreview) {
+                Image(systemName: isPreviewingThis ? "stop.circle.fill" : "play.circle")
+                    .foregroundColor(.blue)
+                    .font(.title2)
+            }
+            .buttonStyle(PlainButtonStyle())
+            
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(.purple)
+                    .padding(.leading, 8)
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            onSelect()
+        }
+    }
+}
+
+// ENHANCED: Voice Quality Tips Component
+struct VoiceQualityTips: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("💡 Tips for Better Voice Quality")
+                .font(.headline)
+                .foregroundColor(.primary)
+            
+            VStack(alignment: .leading, spacing: 8) {
+                TipRow(icon: "arrow.down.circle", text: "Download Enhanced voices in iOS Settings > Accessibility > VoiceOver > Speech")
+                TipRow(icon: "speaker.wave.3", text: "Use headphones or quality speakers for best experience")
+                TipRow(icon: "checkmark.circle", text: "Voices marked with ⭐️ are highest quality")
+            }
+        }
+        .padding()
+        .background(Color(.systemGray6))
+        .cornerRadius(12)
+    }
+}
+
+// Legacy VoiceSelectionView for compatibility (you can remove this if not needed)
+struct VoiceSelectionView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var selectedVoiceIndex: Int
+    let availableVoices: [AVSpeechSynthesisVoice]
+    let voiceNames: [String]
+    
+    var body: some View {
+        EnhancedVoiceSelectionView(
+            selectedVoiceIndex: $selectedVoiceIndex,
+            availableVoices: availableVoices
+        )
     }
 }
 
@@ -1021,7 +1269,7 @@ struct VoiceRow: View {
             Spacer()
             
             if isPremium {
-                Label("Premium", systemImage: "star.fill")
+                Label("Enhanced", systemImage: "star.fill")
                     .font(.caption)
                     .foregroundColor(.yellow)
                     .padding(.horizontal, 8)
@@ -1042,5 +1290,4 @@ struct VoiceRow: View {
 
 #Preview {
     MeditationView()
-} 
-
+}
