@@ -14,9 +14,9 @@ struct DashboardView: View {
     @State private var isLogoZoomed = false
     @State private var showingMeditation = false
     @State private var showingJournal = false
-    @State private var showingPermissions = false
+    @State private var showingSettings = false
     @State private var healthKitAuthorized = false
-    @State private var hasInitialLoad = false
+    
     @State private var showingWorkoutPlan = false
     @State private var showingNutritionPlan = false
     @State private var showingDigitalWellness = false
@@ -26,11 +26,9 @@ struct DashboardView: View {
     @Environment(\.modelContext) var modelContext
     @State private var streak: Int = 0
     
-    var needsPermissions: Bool {
-        !healthKitAuthorized || !screenTimeManager.isAuthorized
-    }
     
-    @State private var permissionsCompleted = false
+    
+    
 
     var body: some View {
         NavigationView {
@@ -43,17 +41,11 @@ struct DashboardView: View {
                         // Compact Header
                         CompactHeader(
                             streak: moodManager.currentStreak,
-                            needsPermissions: needsPermissions,
-                            permissionsCompleted: permissionsCompleted,
-                            showingPermissions: $showingPermissions
+                            showingSettings: $showingSettings
                         )
                         
                         // Permissions Banner (if needed)
-                        if needsPermissions && !permissionsCompleted {
-                            PermissionsBanner {
-                                showingPermissions = true
-                            }
-                        }
+                        
                         
                         // Hero Wellness Features - The main attraction
                         WellnessFeaturesSection(
@@ -90,12 +82,7 @@ struct DashboardView: View {
             }
             .navigationBarHidden(true)
         }
-        .onAppear {
-            if !hasInitialLoad {
-                checkInitialPermissions()
-                hasInitialLoad = true
-            }
-        }
+        
         .fullScreenCover(isPresented: $showingMeditation) {
             MeditationView()
         }
@@ -111,24 +98,16 @@ struct DashboardView: View {
         .fullScreenCover(isPresented: $showingDigitalWellness) {
             DigitalWellnessView()
         }
-        .sheet(isPresented: $showingPermissions, onDismiss: {
-            checkInitialPermissions()
-            if !needsPermissions {
-                permissionsCompleted = true
-            }
-        }) {
-            PermissionsView(
-                healthKitAuthorized: $healthKitAuthorized,
-                onPermissionsGranted: {
-                    Task {
-                        await fetchHealthData()
-                        if !needsPermissions {
-                            permissionsCompleted = true
+        .sheet(isPresented: $showingSettings) {
+                SettingsView(
+                    healthKitAuthorized: $healthKitAuthorized,
+                    onPermissionsGranted: {
+                        Task {
+                            await fetchHealthData()
                         }
                     }
-                }
-            )
-        }
+                )
+            }
         .sheet(isPresented: $showHealthDetails) {
             DetailedHealthView(
                 stepsStatus: stepsStatus,
@@ -157,25 +136,7 @@ struct DashboardView: View {
         }
     }
     
-    private func checkInitialPermissions() {
-        if HKHealthStore.isHealthDataAvailable() {
-            let healthTypes: Set<HKObjectType> = [
-                HKQuantityType.quantityType(forIdentifier: .stepCount)!,
-                HKQuantityType.quantityType(forIdentifier: .heartRate)!,
-                HKCategoryType.categoryType(forIdentifier: .mindfulSession)!,
-                HKCategoryType.categoryType(forIdentifier: .sleepAnalysis)!,
-                HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned)!
-            ]
-            
-            healthKitAuthorized = healthTypes.allSatisfy { type in
-                healthStore.authorizationStatus(for: type) == .sharingAuthorized
-            }
-        }
-        
-        Task {
-            await fetchHealthData()
-        }
-    }
+    
     
     private func fetchHealthData() async {
         stepsStatus = await HealthDataManager.shared.getStepsStatus()
@@ -238,9 +199,7 @@ struct AnimatedBackground: View {
 // MARK: - Compact Header
 struct CompactHeader: View {
     let streak: Int
-    let needsPermissions: Bool
-    let permissionsCompleted: Bool
-    @Binding var showingPermissions: Bool
+    @Binding var showingSettings: Bool
     
     var body: some View {
         HStack {
@@ -265,7 +224,7 @@ struct CompactHeader: View {
                         )
                     
                     HStack(spacing: 8) {
-                        Text("🔥 \(streak) day streak")
+                        Text("\(Image(systemName: "flame.fill")) \(streak) day streak")
                             .font(.caption)
                             .fontWeight(.medium)
                             .foregroundColor(.orange)
@@ -283,19 +242,17 @@ struct CompactHeader: View {
             
             Spacer()
             
-            if needsPermissions && !permissionsCompleted {
-                Button(action: {
-                    showingPermissions = true
-                }) {
-                    Image(systemName: "gear")
-                        .font(.title3)
-                        .foregroundColor(.orange)
-                        .padding(8)
-                        .background(
-                            Circle()
-                                .fill(Color.orange.opacity(0.1))
-                        )
-                }
+            Button(action: {
+                showingSettings = true
+            }) {
+                Image(systemName: "gear")
+                    .font(.title3)
+                    .foregroundColor(.primary)
+                    .padding(8)
+                    .background(
+                        Circle()
+                            .fill(Color.primary.opacity(0.1))
+                    )
             }
         }
         .padding(.horizontal, 4)
