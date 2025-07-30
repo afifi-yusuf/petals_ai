@@ -1,4 +1,3 @@
-
 import SwiftUI
 import HealthKit
 
@@ -8,14 +7,15 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
     @StateObject private var screenTimeManager = ScreenTimeManager.shared
-    @State private var isRequestingHealthKit = false
-    @State private var isRequestingScreenTime = false
     
+    @State private var notificationsEnabled = true
+    @State private var selectedTheme = 0 // 0: System, 1: Light, 2: Dark
+
     var body: some View {
         NavigationView {
             ZStack {
                 // Adaptive background
-                (colorScheme == .dark ? Color.black : Color.white)
+                (colorScheme == .dark ? Color.black : Color(UIColor.systemGroupedBackground))
                     .ignoresSafeArea()
                 
                 ScrollView {
@@ -49,75 +49,52 @@ struct SettingsView: View {
                                 .fontWeight(.bold)
                                 .foregroundColor(.primary)
                                 .multilineTextAlignment(.center)
-                            
-                            Text("Manage your app settings and permissions.")
-                                .font(.body)
-                                .foregroundColor(.secondary)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal, 32)
                         }
                         .padding(.top, 40)
                         
-                        VStack(spacing: 20) {
-                            // HealthKit Permission
-                            PermissionCard(
+                        // Permissions
+                        SettingsSection(title: "Permissions") {
+                            PermissionRow(
                                 title: "Health Data",
-                                description: "Steps, heart rate, sleep, and exercise data",
+                                description: "Steps, heart rate, sleep, etc.",
                                 icon: "heart.fill",
                                 color: .red,
-                                isGranted: healthKitAuthorized,
-                                isRequesting: isRequestingHealthKit
+                                isGranted: healthKitAuthorized
                             ) {
                                 requestHealthKitPermission()
                             }
                             
-                            // Screen Time Permission
-                            PermissionCard(
+                            PermissionRow(
                                 title: "Screen Time",
-                                description: "App usage and digital wellness insights",
+                                description: "App usage insights",
                                 icon: "iphone",
                                 color: .orange,
-                                isGranted: screenTimeManager.isAuthorized,
-                                isRequesting: isRequestingScreenTime
+                                isGranted: screenTimeManager.isAuthorized
                             ) {
                                 requestScreenTimePermission()
                             }
                         }
-                        .padding(.horizontal, 24)
+                        
+                        // About
+                        SettingsSection(title: "About") {
+                            NavigationLink(destination: AboutView()) {
+                                SettingsRow(title: "About Petals AI", icon: "info.circle.fill")
+                            }
+                            NavigationLink(destination: HelpView()) {
+                                SettingsRow(title: "Help & Support", icon: "questionmark.circle.fill")
+                            }
+                        }
                         
                         Spacer()
-                        
-                        // Continue Button
-                        Button(action: {
-                            onPermissionsGranted()
-                            dismiss()
-                        }) {
-                            Text("Done")
-                                .font(.headline)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 16)
-                                .background(
-                                    LinearGradient(
-                                        colors: [.purple, .blue],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                )
-                                .cornerRadius(16)
-                                .shadow(color: .purple.opacity(0.3), radius: 8, x: 0, y: 4)
-                        }
-                        .padding(.horizontal, 24)
-                        .padding(.bottom, 30)
                     }
+                    .padding(.horizontal, 24)
                 }
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Close") {
+                    Button("Done") {
                         dismiss()
                     }
                     .foregroundColor(.primary)
@@ -130,28 +107,107 @@ struct SettingsView: View {
     }
     
     private func requestHealthKitPermission() {
-        guard !isRequestingHealthKit else { return }
-        isRequestingHealthKit = true
         Task {
-            await MainActor.run {
-                HealthDataManager.shared.requestHealthKitAuthorization()
-            }
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            await HealthDataManager.shared.requestHealthKitAuthorization()
             await MainActor.run {
                 healthKitAuthorized = true
-                isRequestingHealthKit = false
             }
         }
     }
     
     private func requestScreenTimePermission() {
-        guard !isRequestingScreenTime else { return }
-        isRequestingScreenTime = true
-        
         Task {
             await screenTimeManager.requestAuthorization()
-            await MainActor.run {
-                isRequestingScreenTime = false
+        }
+    }
+}
+
+struct SettingsSection<Content: View>: View {
+    let title: String
+    @ViewBuilder let content: Content
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(title)
+                .font(.title2)
+                .fontWeight(.bold)
+                .foregroundColor(.primary)
+                .padding(.leading, 4)
+            
+            VStack(spacing: 12) {
+                content
+            }
+            .padding()
+            .background(Color(UIColor.secondarySystemGroupedBackground))
+            .cornerRadius(16)
+        }
+    }
+}
+
+struct SettingsRow: View {
+    let title: String
+    let icon: String
+    
+    var body: some View {
+        HStack {
+            Image(systemName: icon)
+                .foregroundColor(.purple)
+            Text(title)
+            Spacer()
+            Image(systemName: "chevron.right")
+                .foregroundColor(.secondary)
+        }
+        .padding(.vertical, 8)
+    }
+}
+
+struct AboutView: View {
+    var body: some View {
+        Text("About Petals AI").navigationTitle("About")
+    }
+}
+
+struct HelpView: View {
+    var body: some View {
+        Text("Help & Support").navigationTitle("Help")
+    }
+}
+
+struct PermissionRow: View {
+    let title: String
+    let description: String
+    let icon: String
+    let color: Color
+    let isGranted: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        HStack {
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundColor(color)
+                .frame(width: 40, height: 40)
+                .background(color.opacity(0.2).clipShape(Circle()))
+            
+            VStack(alignment: .leading) {
+                Text(title).font(.headline)
+                Text(description).font(.caption).foregroundColor(.secondary)
+            }
+            
+            Spacer()
+            
+            if isGranted {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(.green)
+                    .font(.title3)
+            } else {
+                Button("Grant", action: action)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(color.cornerRadius(12))
             }
         }
     }

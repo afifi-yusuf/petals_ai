@@ -74,6 +74,11 @@ struct DashboardView: View {
                             }
                         }
                         
+                        // Today's Mood - Only if has data
+                        if let mood = moodManager.todaysMood {
+                            TodaysMoodCard(mood: mood)
+                        }
+                        
                         Spacer(minLength: 80)
                     }
                     .padding(.horizontal, 20)
@@ -224,18 +229,10 @@ struct CompactHeader: View {
                         )
                     
                     HStack(spacing: 8) {
-                        Text("\(Image(systemName: "flame.fill")) \(streak) day streak")
+                        Text("\(Image(systemName: "star.fill")) \(streak) day streak")
                             .font(.caption)
                             .fontWeight(.medium)
                             .foregroundColor(.orange)
-                        
-                        Circle()
-                            .fill(Color.green)
-                            .frame(width: 6, height: 6)
-                        
-                        Text("All systems go")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
                     }
                 }
             }
@@ -267,26 +264,12 @@ struct WellnessFeaturesSection: View {
     @Binding var showingNutritionPlan: Bool
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            HStack {
-                Text("Your Wellness Journey")
-                    .font(.title)
-                    .fontWeight(.bold)
-                    .foregroundColor(.primary)
-                
-                Spacer()
-                
-                Text("Start here")
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .foregroundColor(.purple)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(
-                        Capsule()
-                            .fill(Color.purple.opacity(0.1))
-                    )
-            }
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Your Wellness Journey")
+                .font(.title2)
+                .fontWeight(.bold)
+                .foregroundColor(.primary)
+                .padding(.leading, 4)
             
             // Primary Feature Cards (2x2 grid)
             LazyVGrid(columns: [
@@ -591,6 +574,42 @@ struct DigitalWellnessCard: View {
             )
         }
         .buttonStyle(PlainButtonStyle())
+    }
+}
+
+// MARK: - Todays Mood Card
+struct TodaysMoodCard: View {
+    let mood: MoodType
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: mood.icon)
+                    .font(.title2)
+                    .foregroundColor(mood.color)
+                
+                Text("Today's Mood: \(mood.title)")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.primary)
+                
+                Spacer()
+            }
+            
+            Text(mood.description)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(mood.color.opacity(0.3), lineWidth: 1)
+                )
+                .shadow(color: mood.color.opacity(0.1), radius: 8, x: 0, y: 4)
+        )
     }
 }
 
