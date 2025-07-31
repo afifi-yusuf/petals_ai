@@ -132,7 +132,7 @@ struct SettingsView: View {
     
     private func requestHealthKitPermission() {
         Task {
-            await HealthDataManager.shared.requestHealthKitAuthorization()
+            HealthDataManager.shared.requestHealthKitAuthorization()
             await MainActor.run {
                 healthKitAuthorized = true
             }
@@ -186,14 +186,110 @@ struct SettingsRow: View {
 }
 
 struct AboutView: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
-        Text("About Petals AI").navigationTitle("About")
+        ZStack {
+            (colorScheme == .dark ? Color.black : Color(UIColor.systemGroupedBackground))
+                .ignoresSafeArea()
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("About Petals AI")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundColor(.primary)
+
+                    Text("Petals is a private, on-device AI wellness app for iPhone. It uses Apple’s Neural Engine for fast and secure AI experiences — no internet needed.")
+                        .foregroundColor(.primary)
+
+                    Text("Features include:")
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label("A context-aware AI chatbot", systemImage: "message.fill")
+                        Label("Personalized nutrition and workout plans", systemImage: "leaf.fill")
+                        Label("Meditation and mindfulness support", systemImage: "brain.head.profile")
+                        Label("Journaling for reflection and focus", systemImage: "book.closed.fill")
+                    }
+                    .foregroundColor(.primary)
+                    .padding(.leading, 8)
+
+                    Text("Everything runs on your device, and your health data stays private. Petals doesn’t send any data to the cloud.")
+                        .foregroundColor(.primary)
+
+                    Text("If a response seems limited, it may be due to built-in safety guardrails. Try rephrasing your question for better results.")
+                        .foregroundColor(.primary)
+                    
+                    Text("If an AI response fails, ensure the device is not on low power mode and try again.")
+                        .foregroundColor(.primary)
+
+                    Text("For richer voice output, enable enhanced voices in Settings > Accessibility > Voice Over > Speech.")
+                        .foregroundColor(.primary)
+
+                    Divider().background(Color.secondary)
+
+                    Text("🌐 Connect with us")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+
+                    Text("Website: petalsapp.ai\nInstagram, TikTok, X: @petals.ai")
+                        .foregroundColor(.primary)
+
+                    Spacer()
+                }
+                .padding()
+            }
+        }
+        .navigationTitle("About")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
 struct HelpView: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
-        Text("Help & Support").navigationTitle("Help")
+        ZStack {
+            (colorScheme == .dark ? Color.black : Color(UIColor.systemGroupedBackground))
+                .ignoresSafeArea()
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Help & Support")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundColor(.primary)
+
+                    Text("Need help using Petals? Here’s a quick guide:")
+                        .foregroundColor(.primary)
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("• **Permissions**: Enable Health and Screen Time for personalized insights.")
+                        Text("• **Daily Reminders**: Manage notifications and reminder times in Settings.")
+                        Text("• **Refining Questions**: If a response seems off, try rewording it. Guardrails may restrict some outputs.")
+                        Text("• **Voice Output**: For improved spoken responses, enable enhanced voices (Settings > Accessibility >  Voice Over > Speech .")
+                        Text("• **Privacy**: All AI runs locally. Your data is never uploaded.")
+                        Text("• **App issues?** Restart the app. For updates, follow us on social media.")
+                    }
+                    .foregroundColor(.primary)
+
+                    Divider().background(Color.secondary)
+                    
+                    Text("🌐 Connect with us")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+
+                    Text("Website: petalsapp.ai\nInstagram, TikTok, X: @petals.ai")
+                        .foregroundColor(.primary)
+                    Spacer()
+                }
+                .padding()
+            }
+        }
+        .navigationTitle("Help")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -236,3 +332,4 @@ struct PermissionRow: View {
         }
     }
 }
+
