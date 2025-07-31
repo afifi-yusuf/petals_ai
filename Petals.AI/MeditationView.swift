@@ -690,7 +690,7 @@ struct MeditationSessionView: View {
             try AVAudioSession.sharedInstance().setCategory(
                 .playback,
                 mode: .spokenAudio,  // Key: This mode is optimized for speech
-                options: [.allowBluetooth, .allowAirPlay, .mixWithOthers]
+                options: [.allowBluetoothHFP, .allowAirPlay, .mixWithOthers]
             )
             try AVAudioSession.sharedInstance().setActive(true)
             print("✅ Audio session configured for enhanced speech")
