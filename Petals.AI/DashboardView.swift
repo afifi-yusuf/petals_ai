@@ -379,6 +379,7 @@ struct HeroFeatureCard: View {
                     )
                 )
             }
+            .frame(width: 100, height:150)
             .padding(.vertical, 24)
             .padding(.horizontal, 16)
             .background(
