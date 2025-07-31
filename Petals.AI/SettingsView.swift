@@ -8,6 +8,9 @@ struct SettingsView: View {
     @Environment(\.colorScheme) private var colorScheme
     @StateObject private var screenTimeManager = ScreenTimeManager.shared
     
+    @AppStorage("dailyReminderEnabled") private var dailyReminderEnabled = true
+    @AppStorage("dailyReminderTime") private var dailyReminderTime: Date = Calendar.current.date(bySettingHour: 20, minute: 0, second: 0, of: Date()) ?? Date()
+    
     @State private var notificationsEnabled = true
     @State private var selectedTheme = 0 // 0: System, 1: Light, 2: Dark
 
@@ -51,6 +54,27 @@ struct SettingsView: View {
                                 .multilineTextAlignment(.center)
                         }
                         .padding(.top, 40)
+                        
+                        // Notifications
+                        SettingsSection(title: "Notifications") {
+                            Toggle(isOn: $dailyReminderEnabled) {
+                                Text("Daily Reminder")
+                            }
+                            .onChange(of: dailyReminderEnabled) { _, newValue in
+                                if newValue {
+                                    NotificationManager.shared.scheduleDailyCheckIn(at: dailyReminderTime)
+                                } else {
+                                    NotificationManager.shared.disableDailyCheckIn()
+                                }
+                            }
+                            
+                            if dailyReminderEnabled {
+                                DatePicker("Time", selection: $dailyReminderTime, displayedComponents: .hourAndMinute)
+                                    .onChange(of: dailyReminderTime) { _, newValue in
+                                        NotificationManager.shared.scheduleDailyCheckIn(at: newValue)
+                                    }
+                            }
+                        }
                         
                         // Permissions
                         SettingsSection(title: "Permissions") {
