@@ -1,10 +1,17 @@
-import Observation
+import Combine
 import FamilyControls
 import ManagedSettings
-import Combine
 
 final class AppSelectionModel: ObservableObject {
-    @Published var selectionToDiscourage = FamilyActivitySelection()
+    @Published var selectionToDiscourage = FamilyActivitySelection() {
+        didSet { DiscouragedSelectionStore.save(selectionToDiscourage) }
+    }
     private let store = ManagedSettingsStore()
-    func apply() { store.shield.applications = selectionToDiscourage.applicationTokens }
+
+    func apply() {
+        let tokens = selectionToDiscourage.applicationTokens
+        store.shield.applications = tokens.isEmpty ? nil : tokens
+        DiscouragedSelectionStore.save(selectionToDiscourage)
+    }
 }
+

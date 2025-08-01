@@ -8,14 +8,16 @@ import SwiftUI
 import FamilyControls
 
 struct BlockAppPicker: View {
-    @Environment(\.colorScheme) private var colorScheme
     @StateObject var model = AppSelectionModel()
-    @State private var isPresented: Bool = false
+    @State private var isPresented = false
+
     var body: some View {
-        Button("Select Apps to Discourage"){
-            isPresented = true
-        }
-        .familyActivityPicker(isPresented: $isPresented, selection: $model.selectionToDiscourage)
+        Button("Select Apps to Discourage") { isPresented = true }
+            .familyActivityPicker(isPresented: $isPresented,
+                                  selection: $model.selectionToDiscourage)
+            .onChange(of: isPresented) { _, showing in
+                if showing == false { model.apply() }    // iOS 17+ onChange
+            }
     }
 }
 

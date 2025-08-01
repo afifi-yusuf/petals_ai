@@ -14,21 +14,20 @@ import FamilyControls
 class DeviceActivityMonitorExtension: DeviceActivityMonitor {
     let store = ManagedSettingsStore()
     override func intervalDidStart(for activity: DeviceActivityName) {
-        super.intervalDidStart(for: activity)
-        let model = AppSelectionModel()
-        let applications = model.selectionToDiscourage.applicationTokens
-        store.shield.applications = applications.isEmpty ? nil : applications
-        
-        
-        // Handle the start of the interval.
-    }
-    
-    override func intervalDidEnd(for activity: DeviceActivityName) {
-        super.intervalDidEnd(for: activity)
-        store.shield.applications = nil
-        
-        // Handle the end of the interval.
-    }
+            super.intervalDidStart(for: activity)
+
+            if let sel = DiscouragedSelectionStore.load() {
+                let tokens: Set<ApplicationToken> = sel.applicationTokens
+                store.shield.applications = tokens.isEmpty ? nil : tokens
+            } else {
+                store.shield.applications = nil
+            }
+        }
+
+        override func intervalDidEnd(for activity: DeviceActivityName) {
+            super.intervalDidEnd(for: activity)
+            store.shield.applications = nil
+        }
     
     override func eventDidReachThreshold(_ event: DeviceActivityEvent.Name, activity: DeviceActivityName) {
         super.eventDidReachThreshold(event, activity: activity)
