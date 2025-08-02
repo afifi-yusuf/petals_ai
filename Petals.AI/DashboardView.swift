@@ -65,10 +65,6 @@ struct DashboardView: View {
                             }
                         )
                         
-                        DigitalWellnessCard(screenTimeManager: screenTimeManager) {
-                            showingDigitalWellness = true
-                        }
-                        
                         ScreenTimeSummaryCard(screenTimeManager: screenTimeManager) {
                             showingDigitalWellness = true   // opens your BlockAppPicker
                         }
@@ -171,7 +167,7 @@ struct ScreenTimeSummaryCard: View {
         VStack(alignment: .leading, spacing: 12) {
             // Header
             HStack {
-                Label("Screen Time", systemImage: "iphone")
+                Label("Digital Detox", systemImage: "iphone")
                     .font(.headline)
                     .foregroundColor(.primary)
                 Spacer()
@@ -179,7 +175,7 @@ struct ScreenTimeSummaryCard: View {
                     onManageTapped()
                 } label: {
                     HStack(spacing: 4) {
-                        Text("Manage")
+                        Text("Manage Restrictions")
                         Image(systemName: "chevron.right")
                             .font(.caption)
                     }
@@ -193,7 +189,7 @@ struct ScreenTimeSummaryCard: View {
                 if screenTimeManager.isAuthorized {
                     // Your custom report scene (.pieChart) rendered inline
                     DeviceActivityReport(.pieChart, filter: filter)
-                        .frame(height: 180)
+                        .frame(height: 15)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 } else {
                     VStack(alignment: .leading, spacing: 8) {
@@ -589,65 +585,6 @@ struct CompactHealthItem: View {
                 .foregroundColor(.primary)
         }
         .frame(width: 44)
-    }
-}
-
-//// MARK: - Digital Wellness Card
-struct DigitalWellnessCard: View {
-    let screenTimeManager: ScreenTimeManager
-    let action: () -> Void
-    
-    var body: some View {
-//        let insights = screenTimeManager.getDigitalWellnessInsights().prefix(2)
-//        let insightsVStack = VStack(alignment: .leading, spacing: 6) {
-//            ForEach(Array(insights), id: \.self) { insight in
-//                HStack(spacing: 8) {
-//                    Circle()
-//                        .fill(Color.orange.opacity(0.3))
-//                        .frame(width: 4, height: 4)
-//                    Text(insight)
-//                        .font(.subheadline)
-//                        .foregroundColor(.secondary)
-//                    Spacer()
-//                }
-//            }
-//        }
-//        
-        return Button(action: action) {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Image(systemName: "iphone")
-                        .foregroundColor(.orange)
-                    Text("Digital Detox")
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.primary)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundColor(.orange)
-                        .fontWeight(.medium)
-                }
-                 HStack {
-                    Text("Tap to explore")
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .foregroundColor(.orange)
-                    Spacer()
-                }
-            }
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(.ultraThinMaterial)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(Color.orange.opacity(0.2), lineWidth: 1)
-                    )
-                    .shadow(color: .orange.opacity(0.1), radius: 8, x: 0, y: 4)
-            )
-        }
-        .buttonStyle(PlainButtonStyle())
     }
 }
 
