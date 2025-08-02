@@ -14,9 +14,9 @@ struct DashboardView: View {
     @State private var isLogoZoomed = false
     @State private var showingMeditation = false
     @State private var showingJournal = false
-    @State private var showingPermissions = false
+    @State private var showingSettings = false
     @State private var healthKitAuthorized = false
-    @State private var hasInitialLoad = false
+    
     @State private var showingWorkoutPlan = false
     @State private var showingNutritionPlan = false
     @State private var showingDigitalWellness = false
@@ -26,11 +26,9 @@ struct DashboardView: View {
     @Environment(\.modelContext) var modelContext
     @State private var streak: Int = 0
     
-    var needsPermissions: Bool {
-        !healthKitAuthorized || !screenTimeManager.isAuthorized
-    }
     
-    @State private var permissionsCompleted = false
+    
+    
 
     var body: some View {
         NavigationView {
@@ -42,18 +40,14 @@ struct DashboardView: View {
                     VStack(spacing: 20) {
                         // Compact Header
                         CompactHeader(
-                            streak: 0,
+                            moodManager.currentStreak,
                             needsPermissions: needsPermissions,
                             permissionsCompleted: permissionsCompleted,
                             showingPermissions: $showingPermissions
                         )
                         
                         // Permissions Banner (if needed)
-                        if needsPermissions && !permissionsCompleted {
-                            PermissionsBanner {
-                                showingPermissions = true
-                            }
-                        }
+                        
                         
                         // Hero Wellness Features - The main attraction
                         WellnessFeaturesSection(
@@ -82,6 +76,11 @@ struct DashboardView: View {
                             }
                         }
                         
+                        // Today's Mood - Only if has data
+                        if let mood = moodManager.todaysMood {
+                            TodaysMoodCard(mood: mood)
+                        }
+                        
                         Spacer(minLength: 80)
                     }
                     .padding(.horizontal, 20)
@@ -90,12 +89,7 @@ struct DashboardView: View {
             }
             .navigationBarHidden(true)
         }
-        .onAppear {
-            if !hasInitialLoad {
-                checkInitialPermissions()
-                hasInitialLoad = true
-            }
-        }
+        
         .fullScreenCover(isPresented: $showingMeditation) {
             MeditationView()
         }
@@ -111,24 +105,16 @@ struct DashboardView: View {
         .fullScreenCover(isPresented: $showingDigitalWellness) {
             BlockAppPicker()
         }
-        .sheet(isPresented: $showingPermissions, onDismiss: {
-            checkInitialPermissions()
-            if !needsPermissions {
-                permissionsCompleted = true
-            }
-        }) {
-            PermissionsView(
-                healthKitAuthorized: $healthKitAuthorized,
-                onPermissionsGranted: {
-                    Task {
-                        await fetchHealthData()
-                        if !needsPermissions {
-                            permissionsCompleted = true
+        .sheet(isPresented: $showingSettings) {
+                SettingsView(
+                    healthKitAuthorized: $healthKitAuthorized,
+                    onPermissionsGranted: {
+                        Task {
+                            await fetchHealthData()
                         }
                     }
-                }
-            )
-        }
+                )
+            }
         .sheet(isPresented: $showHealthDetails) {
             DetailedHealthView(
                 stepsStatus: stepsStatus,
@@ -157,25 +143,7 @@ struct DashboardView: View {
         }
     }
     
-    private func checkInitialPermissions() {
-        if HKHealthStore.isHealthDataAvailable() {
-            let healthTypes: Set<HKObjectType> = [
-                HKQuantityType.quantityType(forIdentifier: .stepCount)!,
-                HKQuantityType.quantityType(forIdentifier: .heartRate)!,
-                HKCategoryType.categoryType(forIdentifier: .mindfulSession)!,
-                HKCategoryType.categoryType(forIdentifier: .sleepAnalysis)!,
-                HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned)!
-            ]
-            
-            healthKitAuthorized = healthTypes.allSatisfy { type in
-                healthStore.authorizationStatus(for: type) == .sharingAuthorized
-            }
-        }
-        
-        Task {
-            await fetchHealthData()
-        }
-    }
+    
     
     private func fetchHealthData() async {
         stepsStatus = await HealthDataManager.shared.getStepsStatus()
@@ -238,9 +206,7 @@ struct AnimatedBackground: View {
 // MARK: - Compact Header
 struct CompactHeader: View {
     let streak: Int
-    let needsPermissions: Bool
-    let permissionsCompleted: Bool
-    @Binding var showingPermissions: Bool
+    @Binding var showingSettings: Bool
     
     var body: some View {
         HStack {
@@ -265,37 +231,27 @@ struct CompactHeader: View {
                         )
                     
                     HStack(spacing: 8) {
-                        Text("🔥 \(streak) day streak")
+                        Text("\(Image(systemName: "star.fill")) \(streak) day streak")
                             .font(.caption)
                             .fontWeight(.medium)
                             .foregroundColor(.orange)
-                        
-                        Circle()
-                            .fill(Color.green)
-                            .frame(width: 6, height: 6)
-                        
-                        Text("All systems go")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
                     }
                 }
             }
             
             Spacer()
             
-            if needsPermissions && !permissionsCompleted {
-                Button(action: {
-                    showingPermissions = true
-                }) {
-                    Image(systemName: "gear")
-                        .font(.title3)
-                        .foregroundColor(.orange)
-                        .padding(8)
-                        .background(
-                            Circle()
-                                .fill(Color.orange.opacity(0.1))
-                        )
-                }
+            Button(action: {
+                showingSettings = true
+            }) {
+                Image(systemName: "gear")
+                    .font(.title3)
+                    .foregroundColor(.primary)
+                    .padding(8)
+                    .background(
+                        Circle()
+                            .fill(Color.primary.opacity(0.1))
+                    )
             }
         }
         .padding(.horizontal, 4)
@@ -310,26 +266,12 @@ struct WellnessFeaturesSection: View {
     @Binding var showingNutritionPlan: Bool
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            HStack {
-                Text("Your Wellness Journey")
-                    .font(.title)
-                    .fontWeight(.bold)
-                    .foregroundColor(.primary)
-                
-                Spacer()
-                
-                Text("Start here")
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .foregroundColor(.purple)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(
-                        Capsule()
-                            .fill(Color.purple.opacity(0.1))
-                    )
-            }
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Your Wellness Journey")
+                .font(.title2)
+                .fontWeight(.bold)
+                .foregroundColor(.primary)
+                .padding(.leading, 4)
             
             // Primary Feature Cards (2x2 grid)
             LazyVGrid(columns: [
@@ -439,6 +381,7 @@ struct HeroFeatureCard: View {
                     )
                 )
             }
+            .frame(width: 100, height:150)
             .padding(.vertical, 24)
             .padding(.horizontal, 16)
             .background(
@@ -628,6 +571,42 @@ struct DigitalWellnessCard: View {
             )
         }
         .buttonStyle(PlainButtonStyle())
+    }
+}
+
+// MARK: - Todays Mood Card
+struct TodaysMoodCard: View {
+    let mood: MoodType
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: mood.icon)
+                    .font(.title2)
+                    .foregroundColor(mood.color)
+                
+                Text("Today's Mood: \(mood.title)")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.primary)
+                
+                Spacer()
+            }
+            
+            Text(mood.description)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(mood.color.opacity(0.3), lineWidth: 1)
+                )
+                .shadow(color: mood.color.opacity(0.1), radius: 8, x: 0, y: 4)
+        )
     }
 }
 

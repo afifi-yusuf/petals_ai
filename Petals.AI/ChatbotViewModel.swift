@@ -14,7 +14,6 @@ class ChatbotViewModel: ObservableObject {
     @Published var messages: [ChatMessage] = []
     @Published var inputMessage: String = ""
     @Published var isLoading: Bool = false
-    private let moodManager = MoodManager.shared
     
     private var currentSession: LanguageModelSession?
     
@@ -34,7 +33,7 @@ class ChatbotViewModel: ObservableObject {
             await HealthDataManager.shared.requestHealthKitAuthorization()
             let healthSummary = await HealthDataManager.shared.getHealthSummary()
             print(healthSummary)
-            let todaysMood = await MainActor.run { moodManager.todaysMood }
+            let todaysMood = await MainActor.run { MoodManager.shared.todaysMood }
             guard let todaysMood = todaysMood else { return }
             
             currentSession = LanguageModelSession(instructions: """
@@ -145,7 +144,7 @@ class ChatbotViewModel: ObservableObject {
         Task {
             await HealthDataManager.shared.requestHealthKitAuthorization()
             let healthSummary = await HealthDataManager.shared.getHealthSummary()
-            let todaysMood = await MainActor.run { moodManager.todaysMood }
+            let todaysMood = await MainActor.run { MoodManager.shared.todaysMood }
             guard let todaysMood = todaysMood else { return }
             
             currentSession = LanguageModelSession(instructions: """
