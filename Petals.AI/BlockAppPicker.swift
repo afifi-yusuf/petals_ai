@@ -34,8 +34,7 @@ struct BlockAppPicker: View {
                     Button("Select Apps to Discourage") { isPresented = true }
                         .familyActivityPicker(isPresented: $isPresented,
                                               selection: $model.selectionToDiscourage)
-                    // If you want immediate blocking, uncomment:
-                    // .onChange(of: isPresented) { _, showing in if !showing { model.apply() } }
+                    .onChange(of: isPresented) { _, showing in if !showing { model.apply() } }
                 }
 
                 if hasSelection {
