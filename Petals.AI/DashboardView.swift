@@ -22,7 +22,7 @@ struct DashboardView: View {
     @State private var showingDigitalWellness = false
     @State private var showHealthDetails = false
     @StateObject private var screenTimeManager = ScreenTimeManager.shared
-    @StateObject private var moodManager = MoodManager.shared
+//    @StateObject private var moodManager = MoodManager.shared
     @Environment(\.modelContext) var modelContext
     @State private var streak: Int = 0
     
@@ -40,8 +40,10 @@ struct DashboardView: View {
                     VStack(spacing: 20) {
                         // Compact Header
                         CompactHeader(
-                            streak: moodManager.currentStreak,
-                            showingSettings: $showingSettings
+                            moodManager.currentStreak,
+                            needsPermissions: needsPermissions,
+                            permissionsCompleted: permissionsCompleted,
+                            showingPermissions: $showingPermissions
                         )
                         
                         // Permissions Banner (if needed)
@@ -67,8 +69,8 @@ struct DashboardView: View {
                             }
                         )
                         
-                        // Digital Wellness - Only if has data
-                        if screenTimeManager.isAuthorized && screenTimeStatus?.hasData == true {
+//                         Digital Wellness - Only if has data
+                        if screenTimeManager.isAuthorized {
                             DigitalWellnessCard(screenTimeManager: screenTimeManager) {
                                 showingDigitalWellness = true
                             }
@@ -101,7 +103,7 @@ struct DashboardView: View {
             NutritionPlanView()
         }
         .fullScreenCover(isPresented: $showingDigitalWellness) {
-            DigitalWellnessView()
+            BlockAppPicker()
         }
         .sheet(isPresented: $showingSettings) {
                 SettingsView(
@@ -149,7 +151,7 @@ struct DashboardView: View {
         mindfulnessStatus = await HealthDataManager.shared.getMindfulnessStatus()
         sleepStatus = await HealthDataManager.shared.getSleepStatus()
         activeEnergyStatus = await HealthDataManager.shared.getActiveEnergyStatus()
-        screenTimeStatus = await screenTimeManager.getScreenTimeStatus()
+//        screenTimeStatus = await screenTimeManager.getScreenTimeStatus()
     }
 }
 
@@ -513,53 +515,47 @@ struct CompactHealthItem: View {
     }
 }
 
-// MARK: - Digital Wellness Card
+//// MARK: - Digital Wellness Card
 struct DigitalWellnessCard: View {
     let screenTimeManager: ScreenTimeManager
     let action: () -> Void
     
     var body: some View {
-        Button(action: action) {
+//        let insights = screenTimeManager.getDigitalWellnessInsights().prefix(2)
+//        let insightsVStack = VStack(alignment: .leading, spacing: 6) {
+//            ForEach(Array(insights), id: \.self) { insight in
+//                HStack(spacing: 8) {
+//                    Circle()
+//                        .fill(Color.orange.opacity(0.3))
+//                        .frame(width: 4, height: 4)
+//                    Text(insight)
+//                        .font(.subheadline)
+//                        .foregroundColor(.secondary)
+//                    Spacer()
+//                }
+//            }
+//        }
+//        
+        return Button(action: action) {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Image(systemName: "iphone")
                         .foregroundColor(.orange)
-                    
                     Text("Digital Balance")
                         .font(.headline)
                         .fontWeight(.semibold)
                         .foregroundColor(.primary)
-                    
                     Spacer()
-                    
                     Image(systemName: "chevron.right")
                         .font(.caption)
                         .foregroundColor(.orange)
                         .fontWeight(.medium)
                 }
-                
-                VStack(alignment: .leading, spacing: 6) {
-                    ForEach(Array(screenTimeManager.getDigitalWellnessInsights().prefix(2)), id: \.self) { insight in
-                        HStack(spacing: 8) {
-                            Circle()
-                                .fill(Color.orange.opacity(0.3))
-                                .frame(width: 4, height: 4)
-                            
-                            Text(insight)
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                            
-                            Spacer()
-                        }
-                    }
-                }
-                
-                HStack {
+                 HStack {
                     Text("Tap to explore")
                         .font(.caption)
                         .fontWeight(.medium)
                         .foregroundColor(.orange)
-                    
                     Spacer()
                 }
             }
@@ -908,9 +904,9 @@ struct PermissionsView: View {
                 }
             }
         }
-        .onAppear {
-            screenTimeManager.checkAuthorizationStatus()
-        }
+//        .onAppear {
+//            screenTimeManager.checkAuthorizationStatus()
+//        }
     }
     
     private func requestHealthKitPermission() {
@@ -928,17 +924,17 @@ struct PermissionsView: View {
         }
     }
     
-    private func requestScreenTimePermission() {
-        guard !isRequestingScreenTime else { return }
-        isRequestingScreenTime = true
-        
-        Task {
-            await screenTimeManager.requestAuthorization()
+  private func requestScreenTimePermission() {
+      guard !isRequestingScreenTime else { return }
+       isRequestingScreenTime = true
+
+       Task {
+            await screenTimeManager.requestAuthorizationIfNeeded()
             await MainActor.run {
-                isRequestingScreenTime = false
-            }
-        }
-    }
+              isRequestingScreenTime = false
+         }
+     }
+   }
 }
 
 // MARK: - Permission Card (Dark Mode Fixed)

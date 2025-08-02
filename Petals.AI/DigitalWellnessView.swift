@@ -149,14 +149,14 @@ struct DigitalWellnessView: View {
                                 .foregroundColor(.primary)
                                 .padding(.horizontal, 20)
                             
-                            VStack(spacing: 12) {
-                                ForEach(screenTimeManager.getDigitalWellnessInsights(), id: \.self) { insight in
-                                    InsightCard(insight: insight)
-                                        .background(.ultraThinMaterial)
-                                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                                }
-                            }
-                            .padding(.horizontal, 20)
+//                            VStack(spacing: 12) {
+//                                ForEach(screenTimeManager.getDigitalWellnessInsights(), id: \.self) { insight in
+//                                    InsightCard(insight: insight)
+//                                        .background(.ultraThinMaterial)
+//                                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+//                                }
+//                            }
+//                            .padding(.horizontal, 20)
                         }
                         
                         // Action Buttons
