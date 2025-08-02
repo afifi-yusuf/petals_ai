@@ -1,58 +1,47 @@
-import Foundation
 import FamilyControls
 import DeviceActivity
 import ManagedSettings
-import DeviceActivity
+import Foundation
 
-extension DeviceActivityName{
-    static let daily = Self("daily")
+extension DeviceActivityName {
+    static let userWindow = Self("userWindow")
 }
 
 @MainActor
 final class ScreenTimeManager: ObservableObject {
     static let shared = ScreenTimeManager()
-    let center = DeviceActivityCenter()
+    private let center = DeviceActivityCenter()
 
     @Published private(set) var isAuthorized = false
 
-    private init() {
-        refreshAuthorizationStatus()
-    }
+    private init() { refreshAuthorizationStatus() }
 
     func refreshAuthorizationStatus() {
-        let status = AuthorizationCenter.shared.authorizationStatus
-        isAuthorized = (status == .approved)
+        isAuthorized = (AuthorizationCenter.shared.authorizationStatus == .approved)
     }
 
     func requestAuthorizationIfNeeded() async {
-        // Check first
         refreshAuthorizationStatus()
         guard !isAuthorized else { return }
-
-        do {
-            try await AuthorizationCenter.shared.requestAuthorization(for: .individual)
-        } catch {
-            print("Authorization failed: \(error)")
-        }
-        // Update after the attempt
+        do { try await AuthorizationCenter.shared.requestAuthorization(for: .individual) }
+        catch { print("Authorization failed: \(error)") }
         refreshAuthorizationStatus()
     }
-    
-    func startDailyMonitoring() {
-           let schedule = DeviceActivitySchedule(
-               intervalStart: DateComponents(hour: 0, minute: 0),
-               intervalEnd: DateComponents(hour: 23, minute: 59),
-               repeats: true
-           )
-           do {
-               try center.startMonitoring(.daily, during: schedule)
-           } catch {
-               print("startMonitoring failed: \(error)")
-           }
-       }
-    
-    func stopDailyMonitoring() {
-            center.stopMonitoring([.daily])
+
+    func startDailyWindow(start: DateComponents, end: DateComponents) {
+        center.stopMonitoring([.userWindow])  // not throwing
+        let schedule = DeviceActivitySchedule(intervalStart: start,
+                                              intervalEnd: end,
+                                              repeats: true)
+        do {
+            try center.startMonitoring(.userWindow, during: schedule)
+        } catch {
+            print("startMonitoring failed: \(error)")
+        }
     }
 
+    func stopDailyWindow() {
+        center.stopMonitoring([.userWindow])
+    }
 }
+
