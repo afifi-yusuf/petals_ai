@@ -355,11 +355,16 @@ class HealthDataManager {
 
     func getHeartRate() async throws -> Double {
         let heartRateType = HKQuantityType.quantityType(forIdentifier: .heartRate)!
+        let now = Date()
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: now)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+        let predicateForToday = HKQuery.predicateForSamples(withStart: startOfDay, end: endOfDay, options: .strictStartDate)
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
         return try await withCheckedThrowingContinuation { continuation in
             let query = HKSampleQuery(
                 sampleType: heartRateType,
-                predicate: nil,
+                predicate: predicateForToday,
                 limit: 1,
                 sortDescriptors: [sortDescriptor]
             ) { _, samples, error in
