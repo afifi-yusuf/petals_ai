@@ -148,7 +148,7 @@ struct DashboardView: View {
         mindfulnessStatus = await HealthDataManager.shared.getMindfulnessStatus()
         sleepStatus = await HealthDataManager.shared.getSleepStatus()
         activeEnergyStatus = await HealthDataManager.shared.getActiveEnergyStatus()
-//        screenTimeStatus = await screenTimeManager.getScreenTimeStatus()
+        screenTimeStatus = await HealthDataManager.shared.getScreenTimeStatus()
     }
 }
 

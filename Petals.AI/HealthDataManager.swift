@@ -175,7 +175,38 @@ class HealthDataManager {
         
         return summaryParts.joined(separator: " | ")
     }
+    
+    func getScreenTimeStatus() async -> HealthDataStatus {
+            let suite = "group.com.petals.ai"                      // same group
+            let key   = "screenTime.today.seconds"
 
+            let seconds = (UserDefaults(suiteName: suite)?
+                .integer(forKey: key)) ?? 0
+
+            func format(_ s: Int) -> String {
+                let h = s / 3600
+                let m = (s % 3600) / 60
+                if h > 0 { return "\(h)h \(m)m" }
+                return "\(m)m"
+            }
+
+            if seconds > 0 {
+                return HealthDataStatus(
+                    value: Double(seconds),
+                    hasData: true,
+                    message: format(seconds),
+                    suggestion: nil
+                )
+            } else {
+                return HealthDataStatus(
+                    value: 0,
+                    hasData: false,
+                    message: "No data",
+                    suggestion: "Open Digital Wellness to refresh"
+                )
+            }
+        }
+    
     // MARK: - Enhanced Data Methods with Status
     func getStepsStatus() async -> HealthDataStatus {
         do {
