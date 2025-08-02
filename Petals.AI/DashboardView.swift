@@ -1,4 +1,5 @@
 import SwiftUI
+import DeviceActivity
 import SwiftData
 import HealthKit
 import FamilyControls
@@ -66,6 +67,10 @@ struct DashboardView: View {
                         
                         DigitalWellnessCard(screenTimeManager: screenTimeManager) {
                             showingDigitalWellness = true
+                        }
+                        
+                        ScreenTimeSummaryCard(screenTimeManager: screenTimeManager) {
+                            showingDigitalWellness = true   // opens your BlockAppPicker
                         }
                     
                         // Today's Mood - Only if has data
@@ -144,6 +149,86 @@ struct DashboardView: View {
         sleepStatus = await HealthDataManager.shared.getSleepStatus()
         activeEnergyStatus = await HealthDataManager.shared.getActiveEnergyStatus()
 //        screenTimeStatus = await screenTimeManager.getScreenTimeStatus()
+    }
+}
+
+private extension DateInterval {
+    static var today: DateInterval {
+        let cal = Calendar.current
+        let start = cal.startOfDay(for: Date())
+        let end   = cal.date(byAdding: .day, value: 1, to: start)!
+        return DateInterval(start: start, end: end)
+    }
+}
+
+struct ScreenTimeSummaryCard: View {
+    @ObservedObject var screenTimeManager: ScreenTimeManager
+    var onManageTapped: () -> Void
+
+    @State private var filter = DeviceActivityFilter(segment: .daily(during: .today))
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Header
+            HStack {
+                Label("Screen Time", systemImage: "iphone")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                Spacer()
+                Button {
+                    onManageTapped()
+                } label: {
+                    HStack(spacing: 4) {
+                        Text("Manage")
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                    }
+                }
+                .font(.caption)
+                .foregroundColor(.orange)
+            }
+
+            // Content
+            Group {
+                if screenTimeManager.isAuthorized {
+                    // Your custom report scene (.pieChart) rendered inline
+                    DeviceActivityReport(.pieChart, filter: filter)
+                        .frame(height: 180)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                } else {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Screen Time access needed")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        Button {
+                            Task { await screenTimeManager.requestAuthorizationIfNeeded() }
+                        } label: {
+                            Text("Grant Access")
+                                .font(.subheadline).fontWeight(.semibold)
+                                .padding(.horizontal, 12).padding(.vertical, 8)
+                                .background(RoundedRectangle(cornerRadius: 10).fill(Color.orange.opacity(0.2)))
+                        }
+                    }
+                }
+            }
+
+            // Footer hint
+            HStack {
+                Text("Today")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                Spacer()
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.orange.opacity(0.2), lineWidth: 1)
+                )
+        )
     }
 }
 
