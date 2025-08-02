@@ -126,7 +126,7 @@ struct SettingsView: View {
             }
         }
         .onAppear {
-            screenTimeManager.checkAuthorizationStatus()
+            screenTimeManager.refreshAuthorizationStatus()
         }
     }
     
@@ -141,7 +141,7 @@ struct SettingsView: View {
     
     private func requestScreenTimePermission() {
         Task {
-            await screenTimeManager.requestAuthorization()
+            await screenTimeManager.requestAuthorizationIfNeeded()
         }
     }
 }

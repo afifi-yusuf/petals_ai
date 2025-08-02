@@ -21,38 +21,15 @@ struct DigitalWellnessView: View {
     }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
-                // Background with adaptive vibrancy and contrast for light/dark mode
-                Color.clear
-                    .background(.ultraThinMaterial)
+                Color(.systemGroupedBackground)
                     .ignoresSafeArea()
-                
-                // Gradient overlay adjusted for light/dark mode
-                LinearGradient(
-                    gradient: Gradient(colors: [
-                        Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.08),
-                        Color.primary.opacity(colorScheme == .dark ? 0.10 : 0.04),
-                        Color.primary.opacity(colorScheme == .dark ? 0.05 : 0.02)
-                    ]),
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
-                
+
                 ScrollView {
                     VStack(spacing: 24) {
                         // Header Stats
                         VStack(spacing: 16) {
-                            HStack {
-                                Text("Digital Balance")
-                                    .font(.largeTitle)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.primary)
-                                
-                                Spacer()
-                            }
-                            
                             // Time selector
                             Picker("Timeframe", selection: $selectedTimeframe) {
                                 ForEach(TimeFrame.allCases, id: \.self) { timeframe in
@@ -224,46 +201,19 @@ struct DigitalWellnessView: View {
                     .padding(.vertical, 16)
                 }
             }
-            .navigationBarHidden(true)
-            .overlay(
-                // Custom navigation bar
-                VStack {
-                    HStack {
-                        Button(action: {
-                            dismiss()
-                        }) {
-                            Image(systemName: "xmark")
-                                .font(.title3)
-                                .fontWeight(.medium)
-                                .foregroundColor(.primary)
-                                .padding(8)
-                                .background(
-                                    Circle()
-                                        .fill(.ultraThinMaterial)
-                                )
-                        }
-                        
-                        Spacer()
-                        
-                        Button(action: {
-                            // Settings action
-                        }) {
-                            Image(systemName: "gear")
-                                .font(.title3)
-                                .foregroundColor(.primary)
-                                .padding(8)
-                                .background(
-                                    Circle()
-                                        .fill(.ultraThinMaterial)
-                                )
+            .navigationTitle("Digital Balance")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        HStack {
+                            Image(systemName: "chevron.left")
+                            Text("Back")
                         }
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
-                    
-                    Spacer()
                 }
-            )
+            }
         }
         .environment(\.colorScheme, colorScheme)
     }

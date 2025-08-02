@@ -22,7 +22,7 @@ struct DashboardView: View {
     @State private var showingDigitalWellness = false
     @State private var showHealthDetails = false
     @StateObject private var screenTimeManager = ScreenTimeManager.shared
-//    @StateObject private var moodManager = MoodManager.shared
+    @StateObject private var moodManager = MoodManager.shared
     @Environment(\.modelContext) var modelContext
     @State private var streak: Int = 0
     
@@ -39,12 +39,7 @@ struct DashboardView: View {
                 ScrollView {
                     VStack(spacing: 20) {
                         // Compact Header
-                        CompactHeader(
-                            moodManager.currentStreak,
-                            needsPermissions: needsPermissions,
-                            permissionsCompleted: permissionsCompleted,
-                            showingPermissions: $showingPermissions
-                        )
+                        CompactHeader(streak: moodManager.currentStreak, showingSettings: $showingSettings)
                         
                         // Permissions Banner (if needed)
                         
@@ -69,13 +64,10 @@ struct DashboardView: View {
                             }
                         )
                         
-//                         Digital Wellness - Only if has data
-                        if screenTimeManager.isAuthorized {
-                            DigitalWellnessCard(screenTimeManager: screenTimeManager) {
-                                showingDigitalWellness = true
-                            }
+                        DigitalWellnessCard(screenTimeManager: screenTimeManager) {
+                            showingDigitalWellness = true
                         }
-                        
+                    
                         // Today's Mood - Only if has data
                         if let mood = moodManager.todaysMood {
                             TodaysMoodCard(mood: mood)
@@ -541,7 +533,7 @@ struct DigitalWellnessCard: View {
                 HStack {
                     Image(systemName: "iphone")
                         .foregroundColor(.orange)
-                    Text("Digital Balance")
+                    Text("Digital Detox")
                         .font(.headline)
                         .fontWeight(.semibold)
                         .foregroundColor(.primary)
@@ -1236,3 +1228,4 @@ struct InsightCard: View {
 #Preview {
     DashboardView()
 }
+
