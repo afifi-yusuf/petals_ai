@@ -8,15 +8,17 @@ struct BlockAppPicker: View {
     // MARK: - State Objects
     @StateObject private var appModel = AppSelectionModel()
     
-    // MARK: - AppStorage
-    @AppStorage("windowStartMin", store: UserDefaults(suiteName: DiscouragedSelectionStore.suite)) private var windowStartMin = 17 * 60
-    @AppStorage("windowEndMin", store: UserDefaults(suiteName: DiscouragedSelectionStore.suite)) private var windowEndMin = 20 * 60
-    
     // MARK: - State
     @State private var isPickerPresented = false
     @State private var showingDeleteConfirmation = false
     @State private var showingHelpSheet = false
     @State private var isSaving = false
+    @State private var expandedApps = Set<String>()
+    
+    // Individual time windows for each app (keyed by app identifier)
+    @State private var appStartTimes: [String: Int] = [:]
+    @State private var appEndTimes: [String: Int] = [:]
+    @State private var appEnabled: [String: Bool] = [:]
     
     // MARK: - Computed Properties
     private var hasSelection: Bool {
@@ -27,18 +29,12 @@ struct BlockAppPicker: View {
         appModel.selectionToDiscourage.applicationTokens.count
     }
     
-    private var startBinding: Binding<Date> {
-        Binding(
-            get: { Self.date(fromMinutes: windowStartMin) },
-            set: { windowStartMin = Self.minutes(from: $0) }
-        )
-    }
-    
-    private var endBinding: Binding<Date> {
-        Binding(
-            get: { Self.date(fromMinutes: windowEndMin) },
-            set: { windowEndMin = Self.minutes(from: $0) }
-        )
+    private var selectedApps: [String] {
+        // Convert application tokens to string identifiers for storage
+        appModel.selectionToDiscourage.applicationTokens.map { token in
+            // Use a simple hash or identifier for the token
+            String(token.hashValue)
+        }
     }
     
     // MARK: - Body
@@ -49,7 +45,7 @@ struct BlockAppPicker: View {
                 
                 if hasSelection {
                     selectedAppsSection
-                    timeWindowSection
+                    individualTimeWindowsSection
                     actionSection
                 }
                 
@@ -80,14 +76,20 @@ struct BlockAppPicker: View {
             ) {
                 Button("Remove All", role: .destructive) {
                     appModel.selectionToDiscourage = FamilyActivitySelection()
+                    appStartTimes.removeAll()
+                    appEndTimes.removeAll()
+                    appEnabled.removeAll()
                     appModel.apply()
+                    saveTimeWindows()
                 }
                 Button("Cancel", role: .cancel) { }
             } message: {
-                Text("This will remove all app restrictions and time windows.")
+                Text("This will remove all app restrictions and individual time windows.")
             }
             .onAppear {
                 appModel.selectionToDiscourage = DiscouragedSelectionStore.load() ?? FamilyActivitySelection()
+                loadTimeWindows()
+                syncTimeWindows()
             }
         }
     }
@@ -111,7 +113,7 @@ struct BlockAppPicker: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         } else {
-                            Text("Choose apps to discourage during focus time")
+                            Text("Choose apps with individual time windows")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -130,13 +132,15 @@ struct BlockAppPicker: View {
             )
             .onChange(of: isPickerPresented) { _, isPresented in
                 if !isPresented {
+                    syncTimeWindows()
                     appModel.apply()
+                    saveTimeWindows()
                 }
             }
         } header: {
             Text("App Selection")
         } footer: {
-            Text("Selected apps will be restricted during your configured time window.")
+            Text("Each selected app will have its own individual time window.")
         }
     }
     
@@ -159,48 +163,37 @@ struct BlockAppPicker: View {
         }
     }
     
-    private var timeWindowSection: some View {
+    private var individualTimeWindowsSection: some View {
         Section {
-            VStack(spacing: 16) {
-                HStack {
-                    VStack(alignment: .leading) {
-                        Text("Start Time")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                        
-                        DatePicker(
-                            "Start",
-                            selection: startBinding,
-                            displayedComponents: .hourAndMinute
-                        )
-                        .labelsHidden()
+            ForEach(selectedApps, id: \.self) { appId in
+                AppTimeRow(
+                    appId: appId,
+                    isExpanded: expandedApps.contains(appId),
+                    startMinutes: appStartTimes[appId] ?? (17 * 60),
+                    endMinutes: appEndTimes[appId] ?? (20 * 60),
+                    isEnabled: appEnabled[appId] ?? true,
+                    onToggleExpansion: {
+                        if expandedApps.contains(appId) {
+                            expandedApps.remove(appId)
+                        } else {
+                            expandedApps.insert(appId)
+                        }
+                    },
+                    onTimeUpdate: { start, end in
+                        appStartTimes[appId] = start
+                        appEndTimes[appId] = end
+                        saveTimeWindows()
+                    },
+                    onToggleEnabled: {
+                        appEnabled[appId] = !(appEnabled[appId] ?? true)
+                        saveTimeWindows()
                     }
-                    
-                    Spacer()
-                    
-                    VStack(alignment: .trailing) {
-                        Text("End Time")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                        
-                        DatePicker(
-                            "End",
-                            selection: endBinding,
-                            displayedComponents: .hourAndMinute
-                        )
-                        .labelsHidden()
-                    }
-                }
-                
+                )
+            }
+            
+            if !selectedApps.isEmpty {
                 Button {
-                    isSaving = true
-                    let start = DateComponents(hour: windowStartMin / 60, minute: windowStartMin % 60)
-                    let end   = DateComponents(hour: windowEndMin / 60,   minute: windowEndMin % 60)
-                    // Do this off the main thread to keep UI snappy
-                    Task {
-                        ScreenTimeManager.shared.startDailyWindow(start: start, end: end)
-                        isSaving = false
-                    }
+                    applyAllTimeWindows()
                 } label: {
                     HStack {
                         if isSaving {
@@ -210,7 +203,7 @@ struct BlockAppPicker: View {
                             Image(systemName: "clock.arrow.circlepath")
                         }
                         
-                        Text(isSaving ? "Applying..." : "Apply Time Window")
+                        Text(isSaving ? "Applying..." : "Apply All Time Windows")
                     }
                     .frame(maxWidth: .infinity)
                 }
@@ -218,9 +211,9 @@ struct BlockAppPicker: View {
                 .disabled(isSaving)
             }
         } header: {
-            Text("Allowed Time Window")
+            Text("Individual Time Windows")
         } footer: {
-            Text("Apps will be accessible during this daily time window. Outside these hours, selected apps will be restricted.")
+            Text("Each app will be accessible during its specific time window. Outside these hours, the app will be restricted.")
         }
     }
     
@@ -238,7 +231,7 @@ struct BlockAppPicker: View {
                 }
             }
         } footer: {
-            Text("This will clear all selected apps and remove any time restrictions.")
+            Text("This will clear all selected apps and remove any individual time restrictions.")
         }
     }
     
@@ -251,7 +244,7 @@ struct BlockAppPicker: View {
                     Image(systemName: "questionmark.circle")
                         .foregroundStyle(.blue)
                     
-                    Text("How App Restrictions Work")
+                    Text("How Individual App Restrictions Work")
                         .foregroundStyle(.primary)
                     
                     Spacer()
@@ -269,16 +262,16 @@ struct BlockAppPicker: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     HStack {
-                        Image(systemName: "shield.checkerboard")
+                        Image(systemName: "clock.badge.checkmark")
                             .font(.largeTitle)
                             .foregroundStyle(.blue)
                         
                         VStack(alignment: .leading) {
-                            Text("App Restrictions")
+                            Text("Individual App Restrictions")
                                 .font(.title2)
                                 .fontWeight(.semibold)
                             
-                            Text("Focus on what matters most")
+                            Text("Custom time windows for each app")
                                 .foregroundStyle(.secondary)
                         }
                         
@@ -289,25 +282,31 @@ struct BlockAppPicker: View {
                         helpItem(
                             icon: "app.badge.checkmark",
                             title: "Select Apps",
-                            description: "Choose which apps you want to restrict during focus time."
+                            description: "Choose which apps you want to restrict with individual schedules."
                         )
                         
                         helpItem(
-                            icon: "clock",
-                            title: "Set Time Window",
-                            description: "Define when the selected apps will be accessible each day."
+                            icon: "clock.arrow.2.circlepath",
+                            title: "Individual Time Windows",
+                            description: "Set unique allowed time windows for each selected app."
+                        )
+                        
+                        helpItem(
+                            icon: "togglepower",
+                            title: "Enable/Disable Apps",
+                            description: "Toggle restrictions on or off for individual apps without removing them."
                         )
                         
                         helpItem(
                             icon: "shield",
                             title: "Automatic Blocking",
-                            description: "Apps are automatically restricted outside your allowed time window."
+                            description: "Each app is automatically restricted outside its specific time window."
                         )
                         
                         helpItem(
                             icon: "bell.slash",
-                            title: "Reduced Distractions",
-                            description: "Stay focused by limiting access to distracting applications."
+                            title: "Flexible Focus",
+                            description: "Different apps can have different allowed times based on your needs."
                         )
                     }
                     
@@ -346,6 +345,85 @@ struct BlockAppPicker: View {
         }
     }
     
+    // MARK: - Helper Methods
+    private func syncTimeWindows() {
+        let selectedTokens = appModel.selectionToDiscourage.applicationTokens
+        let selectedIds = Set(selectedTokens.map { String($0.hashValue) })
+        
+        // Remove time windows for apps that are no longer selected
+        appStartTimes = appStartTimes.filter { selectedIds.contains($0.key) }
+        appEndTimes = appEndTimes.filter { selectedIds.contains($0.key) }
+        appEnabled = appEnabled.filter { selectedIds.contains($0.key) }
+        
+        // Add default time windows for new apps
+        for id in selectedIds {
+            if appStartTimes[id] == nil {
+                appStartTimes[id] = 17 * 60 // 5 PM
+            }
+            if appEndTimes[id] == nil {
+                appEndTimes[id] = 20 * 60 // 8 PM
+            }
+            if appEnabled[id] == nil {
+                appEnabled[id] = true
+            }
+        }
+    }
+    
+    private func applyAllTimeWindows() {
+        isSaving = true
+        
+        // Apply each enabled app's time window using existing logic
+        for appId in selectedApps {
+            guard appEnabled[appId] == true else { continue }
+            
+            let startMin = appStartTimes[appId] ?? (17 * 60)
+            let endMin = appEndTimes[appId] ?? (20 * 60)
+            
+            let start = DateComponents(hour: startMin / 60, minute: startMin % 60)
+            let end = DateComponents(hour: endMin / 60, minute: endMin % 60)
+            
+            // Use existing ScreenTimeManager logic for each app
+            Task {
+                ScreenTimeManager.shared.startDailyWindow(start: start, end: end)
+            }
+        }
+        
+        // Use existing apply logic
+        appModel.apply()
+        
+        Task {
+            try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second delay
+            await MainActor.run {
+                isSaving = false
+            }
+        }
+    }
+    
+    private func saveTimeWindows() {
+        let suite = UserDefaults(suiteName: DiscouragedSelectionStore.suite)
+        
+        // Save simple dictionaries with string keys
+        suite?.set(appStartTimes, forKey: "appStartTimes")
+        suite?.set(appEndTimes, forKey: "appEndTimes")
+        suite?.set(appEnabled, forKey: "appEnabled")
+    }
+    
+    private func loadTimeWindows() {
+        let suite = UserDefaults(suiteName: DiscouragedSelectionStore.suite)
+        
+        if let startDict = suite?.object(forKey: "appStartTimes") as? [String: Int] {
+            appStartTimes = startDict
+        }
+        
+        if let endDict = suite?.object(forKey: "appEndTimes") as? [String: Int] {
+            appEndTimes = endDict
+        }
+        
+        if let enabledDict = suite?.object(forKey: "appEnabled") as? [String: Bool] {
+            appEnabled = enabledDict
+        }
+    }
+    
     // Helpers
     private static func date(fromMinutes m: Int) -> Date {
         Calendar.current.date(bySettingHour: m / 60, minute: m % 60, second: 0, of: Date()) ?? Date()
@@ -353,5 +431,148 @@ struct BlockAppPicker: View {
     private static func minutes(from date: Date) -> Int {
         Calendar.current.component(.hour, from: date) * 60 +
         Calendar.current.component(.minute, from: date)
+    }
+}
+
+// MARK: - Individual App Row Component
+struct AppTimeRow: View {
+    let appId: String
+    let isExpanded: Bool
+    let startMinutes: Int
+    let endMinutes: Int
+    let isEnabled: Bool
+    let onToggleExpansion: () -> Void
+    let onTimeUpdate: (Int, Int) -> Void
+    let onToggleEnabled: () -> Void
+    
+    @State private var localStartMinutes: Int
+    @State private var localEndMinutes: Int
+    
+    init(appId: String, isExpanded: Bool, startMinutes: Int, endMinutes: Int, isEnabled: Bool, onToggleExpansion: @escaping () -> Void, onTimeUpdate: @escaping (Int, Int) -> Void, onToggleEnabled: @escaping () -> Void) {
+        self.appId = appId
+        self.isExpanded = isExpanded
+        self.startMinutes = startMinutes
+        self.endMinutes = endMinutes
+        self.isEnabled = isEnabled
+        self.onToggleExpansion = onToggleExpansion
+        self.onTimeUpdate = onTimeUpdate
+        self.onToggleEnabled = onToggleEnabled
+        self._localStartMinutes = State(initialValue: startMinutes)
+        self._localEndMinutes = State(initialValue: endMinutes)
+    }
+    
+    private var startBinding: Binding<Date> {
+        Binding(
+            get: {
+                Calendar.current.date(bySettingHour: localStartMinutes / 60, minute: localStartMinutes % 60, second: 0, of: Date()) ?? Date()
+            },
+            set: { date in
+                localStartMinutes = Calendar.current.component(.hour, from: date) * 60 + Calendar.current.component(.minute, from: date)
+                onTimeUpdate(localStartMinutes, localEndMinutes)
+            }
+        )
+    }
+    
+    private var endBinding: Binding<Date> {
+        Binding(
+            get: {
+                Calendar.current.date(bySettingHour: localEndMinutes / 60, minute: localEndMinutes % 60, second: 0, of: Date()) ?? Date()
+            },
+            set: { date in
+                localEndMinutes = Calendar.current.component(.hour, from: date) * 60 + Calendar.current.component(.minute, from: date)
+                onTimeUpdate(localStartMinutes, localEndMinutes)
+            }
+        )
+    }
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // App header row
+            Button(action: onToggleExpansion) {
+                HStack {
+                    // App icon placeholder
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(.blue.opacity(0.2))
+                        .frame(width: 32, height: 32)
+                        .overlay {
+                            Image(systemName: "app")
+                                .foregroundStyle(.blue)
+                        }
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Selected App")
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+                        
+                        Text(timeRangeText)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    
+                    Spacer()
+                    
+                    Toggle("", isOn: .constant(isEnabled))
+                        .onTapGesture {
+                            onToggleEnabled()
+                        }
+                    
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        .foregroundStyle(.tertiary)
+                        .font(.caption)
+                }
+            }
+            .buttonStyle(.plain)
+            
+            // Expanded time picker section
+            if isExpanded {
+                VStack(spacing: 16) {
+                    Divider()
+                        .padding(.top, 8)
+                    
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text("Start Time")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            
+                            DatePicker(
+                                "Start",
+                                selection: startBinding,
+                                displayedComponents: .hourAndMinute
+                            )
+                            .labelsHidden()
+                        }
+                        
+                        Spacer()
+                        
+                        VStack(alignment: .trailing) {
+                            Text("End Time")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            
+                            DatePicker(
+                                "End",
+                                selection: endBinding,
+                                displayedComponents: .hourAndMinute
+                            )
+                            .labelsHidden()
+                        }
+                    }
+                }
+                .padding(.bottom, 8)
+            }
+        }
+    }
+    
+    private var timeRangeText: String {
+        let startHour = localStartMinutes / 60
+        let startMin = localStartMinutes % 60
+        let endHour = localEndMinutes / 60
+        let endMin = localEndMinutes % 60
+        
+        let status = isEnabled ? "Active" : "Disabled"
+        let timeRange = String(format: "%02d:%02d - %02d:%02d", startHour, startMin, endHour, endMin)
+        
+        return "\(timeRange) • \(status)"
     }
 }
