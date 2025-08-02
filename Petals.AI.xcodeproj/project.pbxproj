@@ -288,9 +288,19 @@
 				TargetAttributes = {
 					3A4A04222E3D60640048ADC6 = {
 						CreatedOnToolsVersion = 26.0;
+						SystemCapabilities = {
+							com.apple.ApplicationGroups.iOS = {
+								enabled = 1;
+							};
+						};
 					};
 					8D44A2042DFB71E100B896EF = {
 						CreatedOnToolsVersion = 16.4;
+						SystemCapabilities = {
+							com.apple.ApplicationGroups.iOS = {
+								enabled = 1;
+							};
+						};
 					};
 					8D44A2152DFB71E300B896EF = {
 						CreatedOnToolsVersion = 16.4;

@@ -7,6 +7,8 @@
 
 
 import SwiftUI
+import FamilyControls
+
 // MARK: - Digital Wellness View
 struct DigitalWellnessView: View {
     @Environment(\.dismiss) private var dismiss
@@ -211,6 +213,19 @@ struct DigitalWellnessView: View {
                             Image(systemName: "chevron.left")
                             Text("Back")
                         }
+                    }
+                }
+            }
+            .sheet(isPresented: $showingAppLimits) {
+                BlockAppPicker()
+            }
+            .onAppear {
+                Task {
+                    do {
+                        try await AuthorizationCenter.shared.requestAuthorization(for: .individual)
+                    } catch {
+                        // Handle the error appropriately
+                        print("Failed to request authorization for Family Controls: \(error)")
                     }
                 }
             }
