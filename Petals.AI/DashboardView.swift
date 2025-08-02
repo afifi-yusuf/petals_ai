@@ -25,7 +25,7 @@ struct DashboardView: View {
     @StateObject private var screenTimeManager = ScreenTimeManager.shared
     @StateObject private var moodManager = MoodManager.shared
     @Environment(\.modelContext) var modelContext
-    @State private var streak: Int = 0
+    @State private var streak: Int = 1
     
     
     
