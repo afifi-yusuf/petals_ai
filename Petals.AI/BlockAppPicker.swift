@@ -25,8 +25,6 @@ struct BlockAppPicker: View {
     @State private var appEndTimes: [String: Int] = [:]
     @State private var appEnabled: [String: Bool] = [:]
     @State private var appNames: [String: String] = [:] // For custom names
-    @State private var context: DeviceActivityReport.Context = .pieChart
-    @State private var filter = DeviceActivityFilter(segment: .daily(during: BlockAppPicker.thisWeek))
 
     // For nickname prompt
     @State private var newAppIdToName: String? = nil
@@ -45,13 +43,6 @@ struct BlockAppPicker: View {
     }
 
     var body: some View {
-        GeometryReader{ geometry in
-            VStack(alignment: .leading){
-                DeviceActivityReport(context, filter: filter)
-                    .frame(height: geometry.size.height * 0.6)
-            }
-            
-        }
         NavigationStack {
             Form {
                 appSelectionSection
