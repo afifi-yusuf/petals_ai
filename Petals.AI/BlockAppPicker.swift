@@ -1,5 +1,10 @@
 import SwiftUI
 import FamilyControls
+import DeviceActivity
+
+extension DeviceActivityReport.Context {
+    static let pieChart = Self("Pie Chart")
+}
 
 struct BlockAppPicker: View {
     @Environment(\.dismiss) private var dismiss
@@ -9,11 +14,19 @@ struct BlockAppPicker: View {
     @State private var showingHelpSheet = false
     @State private var isSaving = false
     @State private var expandedApps = Set<String>()
+    
+    private static var thisWeek: DateInterval {
+        let calendar = Calendar.current
+        let now = Date()
+        return calendar.dateInterval(of: .weekOfYear, for: now)!
+    }
 
     @State private var appStartTimes: [String: Int] = [:]
     @State private var appEndTimes: [String: Int] = [:]
     @State private var appEnabled: [String: Bool] = [:]
     @State private var appNames: [String: String] = [:] // For custom names
+    @State private var context: DeviceActivityReport.Context = .pieChart
+    @State private var filter = DeviceActivityFilter(segment: .daily(during: BlockAppPicker.thisWeek))
 
     // For nickname prompt
     @State private var newAppIdToName: String? = nil
@@ -32,6 +45,13 @@ struct BlockAppPicker: View {
     }
 
     var body: some View {
+        GeometryReader{ geometry in
+            VStack(alignment: .leading){
+                DeviceActivityReport(context, filter: filter)
+                    .frame(height: geometry.size.height * 0.6)
+            }
+            
+        }
         NavigationStack {
             Form {
                 appSelectionSection

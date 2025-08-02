@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		3A4A04262E3D60640048ADC6 /* DeviceActivity.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3A4A04252E3D60640048ADC6 /* DeviceActivity.framework */; };
 		3A4A042E2E3D60640048ADC6 /* DigitalHealthMonitor.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 3A4A04232E3D60640048ADC6 /* DigitalHealthMonitor.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		3A4A05592E3E65220048ADC6 /* DigitalHealthMonitorReport.appex in Embed ExtensionKit Extensions */ = {isa = PBXBuildFile; fileRef = 3A4A054D2E3E65220048ADC6 /* DigitalHealthMonitorReport.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		3A51EDFE2DFDC71E00F625CD /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 3A51EDFD2DFDC71E00F625CD /* GoogleSignIn */; };
 		3A51EE002DFDC71E00F625CD /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 3A51EDFF2DFDC71E00F625CD /* GoogleSignInSwift */; };
 /* End PBXBuildFile section */
@@ -20,6 +21,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 3A4A04222E3D60640048ADC6;
 			remoteInfo = DigitalHealthMonitor;
+		};
+		3A4A05572E3E65220048ADC6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8D44A1FD2DFB71E100B896EF /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3A4A054C2E3E65220048ADC6;
+			remoteInfo = DigitalHealthMonitorReport;
 		};
 		8D44A2172DFB71E300B896EF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -49,11 +57,23 @@
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		3A4A055E2E3E65220048ADC6 /* Embed ExtensionKit Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(EXTENSIONS_FOLDER_PATH)";
+			dstSubfolderSpec = 16;
+			files = (
+				3A4A05592E3E65220048ADC6 /* DigitalHealthMonitorReport.appex in Embed ExtensionKit Extensions */,
+			);
+			name = "Embed ExtensionKit Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		3A4A04232E3D60640048ADC6 /* DigitalHealthMonitor.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = DigitalHealthMonitor.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		3A4A04252E3D60640048ADC6 /* DeviceActivity.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = DeviceActivity.framework; path = System/Library/Frameworks/DeviceActivity.framework; sourceTree = SDKROOT; };
+		3A4A054D2E3E65220048ADC6 /* DigitalHealthMonitorReport.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.extensionkit-extension"; includeInIndex = 0; path = DigitalHealthMonitorReport.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		8D44A2052DFB71E100B896EF /* Petals.AI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Petals.AI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8D44A2162DFB71E300B896EF /* Petals.AITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Petals.AITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		8D44A2202DFB71E300B896EF /* Petals.AIUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Petals.AIUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -74,6 +94,13 @@
 			);
 			target = 3A4A04222E3D60640048ADC6 /* DigitalHealthMonitor */;
 		};
+		3A4A055D2E3E65220048ADC6 /* Exceptions for "DigitalHealthMonitorReport" folder in "DigitalHealthMonitorReport" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 3A4A054C2E3E65220048ADC6 /* DigitalHealthMonitorReport */;
+		};
 		8D44A2282DFB71E300B896EF /* Exceptions for "Petals.AI" folder in "Petals.AI" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -90,6 +117,14 @@
 				3A4A04332E3D60640048ADC6 /* Exceptions for "DigitalHealthMonitor" folder in "DigitalHealthMonitor" target */,
 			);
 			path = DigitalHealthMonitor;
+			sourceTree = "<group>";
+		};
+		3A4A054E2E3E65220048ADC6 /* DigitalHealthMonitorReport */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				3A4A055D2E3E65220048ADC6 /* Exceptions for "DigitalHealthMonitorReport" folder in "DigitalHealthMonitorReport" target */,
+			);
+			path = DigitalHealthMonitorReport;
 			sourceTree = "<group>";
 		};
 		8D44A2072DFB71E100B896EF /* Petals.AI */ = {
@@ -119,6 +154,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				3A4A04262E3D60640048ADC6 /* DeviceActivity.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3A4A054A2E3E65220048ADC6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -163,6 +205,7 @@
 				8D44A2192DFB71E300B896EF /* Petals.AITests */,
 				8D44A2232DFB71E300B896EF /* Petals.AIUITests */,
 				3A4A04272E3D60640048ADC6 /* DigitalHealthMonitor */,
+				3A4A054E2E3E65220048ADC6 /* DigitalHealthMonitorReport */,
 				3A4A04242E3D60640048ADC6 /* Frameworks */,
 				8D44A2062DFB71E100B896EF /* Products */,
 			);
@@ -175,6 +218,7 @@
 				8D44A2162DFB71E300B896EF /* Petals.AITests.xctest */,
 				8D44A2202DFB71E300B896EF /* Petals.AIUITests.xctest */,
 				3A4A04232E3D60640048ADC6 /* DigitalHealthMonitor.appex */,
+				3A4A054D2E3E65220048ADC6 /* DigitalHealthMonitorReport.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -204,6 +248,28 @@
 			productReference = 3A4A04232E3D60640048ADC6 /* DigitalHealthMonitor.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		3A4A054C2E3E65220048ADC6 /* DigitalHealthMonitorReport */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3A4A055A2E3E65220048ADC6 /* Build configuration list for PBXNativeTarget "DigitalHealthMonitorReport" */;
+			buildPhases = (
+				3A4A05492E3E65220048ADC6 /* Sources */,
+				3A4A054A2E3E65220048ADC6 /* Frameworks */,
+				3A4A054B2E3E65220048ADC6 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				3A4A054E2E3E65220048ADC6 /* DigitalHealthMonitorReport */,
+			);
+			name = DigitalHealthMonitorReport;
+			packageProductDependencies = (
+			);
+			productName = DigitalHealthMonitorReport;
+			productReference = 3A4A054D2E3E65220048ADC6 /* DigitalHealthMonitorReport.appex */;
+			productType = "com.apple.product-type.extensionkit-extension";
+		};
 		8D44A2042DFB71E100B896EF /* Petals.AI */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 8D44A2292DFB71E300B896EF /* Build configuration list for PBXNativeTarget "Petals.AI" */;
@@ -212,11 +278,13 @@
 				8D44A2022DFB71E100B896EF /* Frameworks */,
 				8D44A2032DFB71E100B896EF /* Resources */,
 				3A4A042F2E3D60640048ADC6 /* Embed Foundation Extensions */,
+				3A4A055E2E3E65220048ADC6 /* Embed ExtensionKit Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				3A4A042D2E3D60640048ADC6 /* PBXTargetDependency */,
+				3A4A05582E3E65220048ADC6 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				8D44A2072DFB71E100B896EF /* Petals.AI */,
@@ -294,6 +362,9 @@
 							};
 						};
 					};
+					3A4A054C2E3E65220048ADC6 = {
+						CreatedOnToolsVersion = 26.0;
+					};
 					8D44A2042DFB71E100B896EF = {
 						CreatedOnToolsVersion = 16.4;
 						SystemCapabilities = {
@@ -333,12 +404,20 @@
 				8D44A2152DFB71E300B896EF /* Petals.AITests */,
 				8D44A21F2DFB71E300B896EF /* Petals.AIUITests */,
 				3A4A04222E3D60640048ADC6 /* DigitalHealthMonitor */,
+				3A4A054C2E3E65220048ADC6 /* DigitalHealthMonitorReport */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		3A4A04212E3D60640048ADC6 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3A4A054B2E3E65220048ADC6 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -376,6 +455,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		3A4A05492E3E65220048ADC6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		8D44A2012DFB71E100B896EF /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -404,6 +490,11 @@
 			isa = PBXTargetDependency;
 			target = 3A4A04222E3D60640048ADC6 /* DigitalHealthMonitor */;
 			targetProxy = 3A4A042C2E3D60640048ADC6 /* PBXContainerItemProxy */;
+		};
+		3A4A05582E3E65220048ADC6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3A4A054C2E3E65220048ADC6 /* DigitalHealthMonitorReport */;
+			targetProxy = 3A4A05572E3E65220048ADC6 /* PBXContainerItemProxy */;
 		};
 		8D44A2182DFB71E300B896EF /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -467,6 +558,66 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.Petals-AI.DigitalHealthMonitor";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		3A4A055B2E3E65220048ADC6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = DigitalHealthMonitorReport/DigitalHealthMonitorReport.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = CM77Z5GPZW;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = DigitalHealthMonitorReport/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = DigitalHealthMonitorReport;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.Petals-AI.DigitalHealthMonitorReport";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		3A4A055C2E3E65220048ADC6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = DigitalHealthMonitorReport/DigitalHealthMonitorReport.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = CM77Z5GPZW;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = DigitalHealthMonitorReport/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = DigitalHealthMonitorReport;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.Petals-AI.DigitalHealthMonitorReport";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -741,6 +892,15 @@
 			buildConfigurations = (
 				3A4A04302E3D60640048ADC6 /* Debug */,
 				3A4A04312E3D60640048ADC6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3A4A055A2E3E65220048ADC6 /* Build configuration list for PBXNativeTarget "DigitalHealthMonitorReport" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3A4A055B2E3E65220048ADC6 /* Debug */,
+				3A4A055C2E3E65220048ADC6 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
