@@ -48,7 +48,7 @@ class MoodManager: ObservableObject {
         do{
             let logs = try context.fetch(FetchDescriptor<StreakLogModel>(sortBy: [.init(\.date, order: .reverse)]))
             let lastDate = logs.first?.date
-            let curStreak = logs.first?.streak ?? 1
+            let curStreak = logs.first?.streak ?? 0
             
             let entry = StreakLogModel(lastDate: lastDate, lastStreak: curStreak)
             context.insert(entry)

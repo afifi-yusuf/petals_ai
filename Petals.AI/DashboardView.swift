@@ -25,7 +25,7 @@ struct DashboardView: View {
     @StateObject private var screenTimeManager = ScreenTimeManager.shared
     @StateObject private var moodManager = MoodManager.shared
     @Environment(\.modelContext) var modelContext
-    @State private var streak: Int = 1
+    @State private var streak: Int = 0
     
     
     
@@ -82,6 +82,13 @@ struct DashboardView: View {
             }
             .navigationBarHidden(true)
         }
+        .onAppear {
+            Task {
+                await fetchHealthData()
+                await getLatestStreak()
+                moodManager.currentStreak = streak
+            }
+        }
         
         .fullScreenCover(isPresented: $showingMeditation) {
             MeditationView()
@@ -129,7 +136,7 @@ struct DashboardView: View {
                 FetchDescriptor<StreakLogModel>(sortBy: [.init(\.date, order: .reverse)])
             )
             print(logs)
-            streak = logs.first?.streak ?? -1
+            streak = logs.first?.streak ?? 0
         } catch {
             print("Failed to fetch streak: \(error)")
             streak = -2

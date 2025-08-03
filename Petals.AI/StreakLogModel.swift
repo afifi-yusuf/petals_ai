@@ -17,7 +17,6 @@ class StreakLogModel {
     init(id: UUID = UUID(), date: Date = Date(), lastDate: Date?, lastStreak: Int = 1) {
         self.id = id
         self.date = date
-        let lastDate = lastDate ?? Date()
         self.streak = StreakLogModel.calculateStreak(lastDate: lastDate, currentDate: date, currentStreak: lastStreak )
     }
     
