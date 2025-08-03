@@ -97,10 +97,7 @@ class ChatbotViewModel: ObservableObject {
                 } catch {
                     print("Error after session reset: \(error)")
                     await MainActor.run {
-                        messages.append(ChatMessage(
-                            content: "Sorry, I encountered an error. Please try again.",
-                            isUser: false
-                        ))
+                        startNewSession()
                         isLoading = false
                     }
                 }
@@ -108,14 +105,24 @@ class ChatbotViewModel: ObservableObject {
             } catch {
                 print("Error: \(error)")
                 await MainActor.run {
-                    messages.append(ChatMessage(
-                        content: "Sorry, I encountered an error. Please try again.",
-                        isUser: false
-                    ))
+                    startNewSession()
                     isLoading = false
                 }
             }
         }
+    }
+
+    private func startNewSession() {
+        messages.removeAll()
+        messages.append(ChatMessage(
+            content: "Hello! I'm Petal, your health and wellness companion. How can I help you today?",
+            isUser: false
+        ))
+        messages.append(ChatMessage(
+            content: "There was an issue, so I've started a new session. How can I help?",
+            isUser: false
+        ))
+        initializeSession()
     }
     
     private func createNewSessionWithHistory(previousSession: LanguageModelSession) -> LanguageModelSession {
