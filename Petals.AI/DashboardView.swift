@@ -8,10 +8,8 @@ struct DashboardView: View {
     @State private var healthStore = HKHealthStore()
     @State private var stepsStatus: HealthDataManager.HealthDataStatus?
     @State private var heartRateStatus: HealthDataManager.HealthDataStatus?
-    @State private var mindfulnessStatus: HealthDataManager.HealthDataStatus?
     @State private var sleepStatus: HealthDataManager.HealthDataStatus?
     @State private var activeEnergyStatus: HealthDataManager.HealthDataStatus?
-    @State private var screenTimeStatus: HealthDataManager.HealthDataStatus?
     @State private var isLogoZoomed = false
     @State private var showingMeditation = false
     @State private var showingJournal = false
@@ -57,8 +55,8 @@ struct DashboardView: View {
                         QuickHealthInsights(
                             stepsStatus: stepsStatus,
                             heartRateStatus: heartRateStatus,
-                            mindfulnessStatus: mindfulnessStatus,
                             sleepStatus: sleepStatus,
+                            activeEnergyStatus: activeEnergyStatus,
                             showHealthDetails: $showHealthDetails,
                             onRefresh: {
                                 Task { await fetchHealthData() }
@@ -119,10 +117,8 @@ struct DashboardView: View {
             DetailedHealthView(
                 stepsStatus: stepsStatus,
                 heartRateStatus: heartRateStatus,
-                mindfulnessStatus: mindfulnessStatus,
                 sleepStatus: sleepStatus,
                 activeEnergyStatus: activeEnergyStatus,
-                screenTimeStatus: screenTimeStatus,
                 onRefresh: {
                     Task { await fetchHealthData() }
                 }
@@ -148,10 +144,8 @@ struct DashboardView: View {
     private func fetchHealthData() async {
         stepsStatus = await HealthDataManager.shared.getStepsStatus()
         heartRateStatus = await HealthDataManager.shared.getHeartRateStatus()
-        mindfulnessStatus = await HealthDataManager.shared.getMindfulnessStatus()
         sleepStatus = await HealthDataManager.shared.getSleepStatus()
         activeEnergyStatus = await HealthDataManager.shared.getActiveEnergyStatus()
-        screenTimeStatus = await HealthDataManager.shared.getScreenTimeStatus()
     }
 }
 
@@ -163,7 +157,6 @@ private extension DateInterval {
         return DateInterval(start: start, end: end)
     }
 }
-
 struct ScreenTimeSummaryCard: View {
     @ObservedObject var screenTimeManager: ScreenTimeManager
     var onManageTapped: () -> Void
@@ -171,54 +164,100 @@ struct ScreenTimeSummaryCard: View {
     @State private var filter = DeviceActivityFilter(segment: .daily(during: .today))
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             // Header
-            HStack {
-                Label("Digital Detox", systemImage: "iphone")
-                    .font(.headline)
-                    .foregroundColor(.primary)
+            HStack(alignment: .center) {
+                HStack(spacing: 8) {
+                    Image(systemName: "iphone")
+                        .font(.title2)
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.orange, .pink],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                    
+                    Text("Digital Detox")
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
+                }
+                
                 Spacer()
+                
                 Button {
                     onManageTapped()
                 } label: {
-                    HStack(spacing: 4) {
-                        Text("Manage Restrictions")
+                    HStack(spacing: 6) {
+                        Text("Manage")
+                            .fontWeight(.medium)
                         Image(systemName: "chevron.right")
                             .font(.caption)
+                            .fontWeight(.semibold)
                     }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule()
+                            .fill(.orange.opacity(0.1))
+                    )
                 }
                 .font(.caption)
                 .foregroundColor(.orange)
+                .buttonStyle(.plain)
             }
 
-            // Content
-            Group {
-                // Your custom report scene (.pieChart) rendered inline
-                DeviceActivityReport(.pieChart, filter: filter)
-                    .frame(height: 15)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
-
-            // Footer hint
-            HStack {
-                Text("Today")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                Spacer()
+            // Content Section
+            VStack(alignment: .leading, spacing: 12) {
+                // Screen Time Display
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Daily Screen Time")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(.secondary)
+                    
+                    HStack(alignment: .center, spacing: 8) {
+                        DeviceActivityReport(.pieChart, filter: filter)
+                            .frame(height: 24)
+                        
+                        Image(systemName: "clock")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(.regularMaterial)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(.quaternary, lineWidth: 0.5)
+                        )
+                )
+                
             }
         }
-        .padding(16)
+        .padding(20)
         .background(
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: 20)
                 .fill(.ultraThinMaterial)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color.orange.opacity(0.2), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(
+                            LinearGradient(
+                                colors: [.orange.opacity(0.3), .pink.opacity(0.2)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
                 )
         )
+        .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
     }
 }
-
 // MARK: - Animated Background
 struct AnimatedBackground: View {
     @State private var animate = false
@@ -484,8 +523,8 @@ struct HeroFeatureCard: View {
 struct QuickHealthInsights: View {
     let stepsStatus: HealthDataManager.HealthDataStatus?
     let heartRateStatus: HealthDataManager.HealthDataStatus?
-    let mindfulnessStatus: HealthDataManager.HealthDataStatus?
     let sleepStatus: HealthDataManager.HealthDataStatus?
+    let activeEnergyStatus: HealthDataManager.HealthDataStatus?
     @Binding var showHealthDetails: Bool
     let onRefresh: () -> Void
     
@@ -521,15 +560,15 @@ struct QuickHealthInsights: View {
                 )
                 
                 CompactHealthItem(
-                    icon: "brain.head.profile",
-                    value: mindfulnessStatus?.hasData == true ? "\(Int(mindfulnessStatus!.value))m" : "—",
-                    color: .mint
-                )
-                
-                CompactHealthItem(
                     icon: "bed.double.fill",
                     value: sleepStatus?.hasData == true ? "\(String(format: "%.1f", sleepStatus!.value))h" : "—",
                     color: .indigo
+                )
+                
+                CompactHealthItem(
+                    icon: "flame.fill",
+                    value: activeEnergyStatus?.hasData == true ? "\(String(format: "%.1f", activeEnergyStatus!.value))h" : "—",
+                    color: .orange
                 )
                 
                 Spacer()
@@ -619,10 +658,8 @@ struct TodaysMoodCard: View {
 struct DetailedHealthView: View {
     let stepsStatus: HealthDataManager.HealthDataStatus?
     let heartRateStatus: HealthDataManager.HealthDataStatus?
-    let mindfulnessStatus: HealthDataManager.HealthDataStatus?
     let sleepStatus: HealthDataManager.HealthDataStatus?
     let activeEnergyStatus: HealthDataManager.HealthDataStatus?
-    let screenTimeStatus: HealthDataManager.HealthDataStatus?
     let onRefresh: () -> Void
     
     @Environment(\.dismiss) private var dismiss
@@ -653,26 +690,6 @@ struct DetailedHealthView: View {
                         gradientColors: [.red, .pink],
                         progress: heartRateStatus?.hasData == true ? 0.75 : 0.0,
                         hasData: heartRateStatus?.hasData ?? false
-                    )
-                    
-                    EnhancedHealthStatCard(
-                        title: "Mindfulness",
-                        value: mindfulnessStatus?.message ?? "Loading...",
-                        subtitle: mindfulnessStatus?.hasData == true ? "today" : (mindfulnessStatus?.suggestion ?? ""),
-                        icon: "brain.head.profile",
-                        gradientColors: [.mint, .green],
-                        progress: mindfulnessStatus?.hasData == true ? min(mindfulnessStatus!.value / 30, 1.0) : 0.0,
-                        hasData: mindfulnessStatus?.hasData ?? false
-                    )
-                    
-                    EnhancedHealthStatCard(
-                        title: "Screen Time",
-                        value: screenTimeStatus?.message ?? "Loading...",
-                        subtitle: screenTimeStatus?.hasData == true ? "today" : (screenTimeStatus?.suggestion ?? ""),
-                        icon: "iphone",
-                        gradientColors: [.orange, .yellow],
-                        progress: screenTimeStatus?.hasData == true ? min(screenTimeStatus!.value / (8 * 3600), 1.0) : 0.0,
-                        hasData: screenTimeStatus?.hasData ?? false
                     )
                     
                     EnhancedHealthStatCard(
@@ -1103,6 +1120,7 @@ struct EnhancedHealthStatCard: View {
                 .fill(.ultraThinMaterial)
                 .shadow(color: hasData ? (gradientColors.first?.opacity(0.2) ?? .gray.opacity(0.2)) : .gray.opacity(0.1), radius: 10, x: 0, y: 5)
         )
+        .frame(width: 170, height: 170)
     }
 }
 
