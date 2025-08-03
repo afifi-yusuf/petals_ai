@@ -1,0 +1,165 @@
+{
+  "" : {
+    "const-values" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/Petals.AI-master.swiftconstvalues",
+    "dependencies" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/Petals.AI-master.d",
+    "diagnostics" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/Petals.AI-master.dia",
+    "emit-module-dependencies" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/Petals.AI-master-emit-module.d",
+    "emit-module-diagnostics" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/Petals.AI-master-emit-module.dia",
+    "swift-dependencies" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/Petals.AI-master.swiftdeps"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/Petals.AI/AppSelectionModel.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/AppSelectionModel.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/AppSelectionModel.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/AppSelectionModel.o"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/Petals.AI/AppState.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/AppState.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/AppState.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/AppState.o"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/Petals.AI/BlockAppPicker.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/BlockAppPicker.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/BlockAppPicker.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/BlockAppPicker.o"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/Petals.AI/ChatbotView.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/ChatbotView.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/ChatbotView.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/ChatbotView.o"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/Petals.AI/ChatbotViewModel.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/ChatbotViewModel.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/ChatbotViewModel.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/ChatbotViewModel.o"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/Petals.AI/ContentView.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/ContentView.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/ContentView.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/ContentView.o"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/Petals.AI/DailyMoodPromptView.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/DailyMoodPromptView.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/DailyMoodPromptView.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/DailyMoodPromptView.o"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/Petals.AI/DashboardView.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/DashboardView.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/DashboardView.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/DashboardView.o"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/Petals.AI/DigitalWellnessView.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/DigitalWellnessView.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/DigitalWellnessView.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/DigitalWellnessView.o"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/Petals.AI/DiscouragedSelectionStore.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/DiscouragedSelectionStore.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/DiscouragedSelectionStore.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/DiscouragedSelectionStore.o"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/Petals.AI/HealthDataManager.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/HealthDataManager.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/HealthDataManager.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/HealthDataManager.o"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/Petals.AI/Item.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/Item.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/Item.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/Item.o"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/Petals.AI/JournalLogModel.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/JournalLogModel.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/JournalLogModel.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/JournalLogModel.o"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/Petals.AI/JournalView.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/JournalView.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/JournalView.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/JournalView.o"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/Petals.AI/MeditationView.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/MeditationView.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/MeditationView.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/MeditationView.o"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/Petals.AI/MoodManager.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/MoodManager.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/MoodManager.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/MoodManager.o"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/Petals.AI/NotificationManager.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/NotificationManager.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/NotificationManager.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/NotificationManager.o"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/Petals.AI/NutritionPlanView.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/NutritionPlanView.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/NutritionPlanView.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/NutritionPlanView.o"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/Petals.AI/NutritionPlanViewModel.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/NutritionPlanViewModel.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/NutritionPlanViewModel.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/NutritionPlanViewModel.o"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/Petals.AI/PastLogView.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/PastLogView.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/PastLogView.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/PastLogView.o"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/Petals.AI/Petals_AIApp.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/Petals_AIApp.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/Petals_AIApp.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/Petals_AIApp.o"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/Petals.AI/PieChartReport.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/PieChartReport.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/PieChartReport.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/PieChartReport.o"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/Petals.AI/ScreenTimeManager.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/ScreenTimeManager.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/ScreenTimeManager.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/ScreenTimeManager.o"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/Petals.AI/SettingsView.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/SettingsView.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/SettingsView.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/SettingsView.o"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/Petals.AI/SignInWithApple.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/SignInWithApple.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/SignInWithApple.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/SignInWithApple.o"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/Petals.AI/SpeechRecognizer.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/SpeechRecognizer.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/SpeechRecognizer.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/SpeechRecognizer.o"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/Petals.AI/StreakLogModel.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/StreakLogModel.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/StreakLogModel.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/StreakLogModel.o"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/Petals.AI/SubscriptionView.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/SubscriptionView.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/SubscriptionView.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/SubscriptionView.o"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/Petals.AI/WorkoutPlanView.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/WorkoutPlanView.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/WorkoutPlanView.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/WorkoutPlanView.o"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/Petals.AI/WorkoutPlanViewModel.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/WorkoutPlanViewModel.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/WorkoutPlanViewModel.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/WorkoutPlanViewModel.o"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/Petals.AI.build/Objects-normal/arm64/GeneratedAssetSymbols.o"
+  }
+}

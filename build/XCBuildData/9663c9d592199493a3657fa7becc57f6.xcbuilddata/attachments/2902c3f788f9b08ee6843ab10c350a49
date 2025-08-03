@@ -1,0 +1,4 @@
+module AppAuth {
+umbrella "/Users/yusufafifi/Library/Developer/Xcode/DerivedData/Petals.AI-gifqbnzbymbzwrefqfiwyhqjjbqh/SourcePackages/checkouts/AppAuth-iOS/Sources/AppAuth"
+export *
+}

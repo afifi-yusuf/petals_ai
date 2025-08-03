@@ -1,0 +1,4 @@
+module GoogleUtilities_UserDefaults {
+umbrella "/Users/yusufafifi/Library/Developer/Xcode/DerivedData/Petals.AI-gifqbnzbymbzwrefqfiwyhqjjbqh/SourcePackages/checkouts/GoogleUtilities/GoogleUtilities/UserDefaults/Public"
+export *
+}

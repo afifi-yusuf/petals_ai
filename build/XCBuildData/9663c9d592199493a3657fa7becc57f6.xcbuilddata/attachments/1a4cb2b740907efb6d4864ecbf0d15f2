@@ -1,0 +1,4 @@
+module AppCheckCore {
+umbrella header "/Users/yusufafifi/Library/Developer/Xcode/DerivedData/Petals.AI-gifqbnzbymbzwrefqfiwyhqjjbqh/SourcePackages/checkouts/app-check/AppCheckCore/Sources/Public/AppCheckCore/AppCheckCore.h"
+export *
+}

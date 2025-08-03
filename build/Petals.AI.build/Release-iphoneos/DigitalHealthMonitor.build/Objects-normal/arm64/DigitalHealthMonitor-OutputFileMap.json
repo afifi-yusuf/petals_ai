@@ -1,0 +1,25 @@
+{
+  "" : {
+    "const-values" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/DigitalHealthMonitor.build/Objects-normal/arm64/DigitalHealthMonitor-master.swiftconstvalues",
+    "dependencies" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/DigitalHealthMonitor.build/Objects-normal/arm64/DigitalHealthMonitor-master.d",
+    "diagnostics" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/DigitalHealthMonitor.build/Objects-normal/arm64/DigitalHealthMonitor-master.dia",
+    "emit-module-dependencies" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/DigitalHealthMonitor.build/Objects-normal/arm64/DigitalHealthMonitor-master-emit-module.d",
+    "emit-module-diagnostics" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/DigitalHealthMonitor.build/Objects-normal/arm64/DigitalHealthMonitor-master-emit-module.dia",
+    "swift-dependencies" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/DigitalHealthMonitor.build/Objects-normal/arm64/DigitalHealthMonitor-master.swiftdeps"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/DigitalHealthMonitor/DeviceActivityMonitorExtension.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/DigitalHealthMonitor.build/Objects-normal/arm64/DeviceActivityMonitorExtension.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/DigitalHealthMonitor.build/Objects-normal/arm64/DeviceActivityMonitorExtension.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/DigitalHealthMonitor.build/Objects-normal/arm64/DeviceActivityMonitorExtension.o"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/DigitalHealthMonitor/DiscouragedSelectionStore.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/DigitalHealthMonitor.build/Objects-normal/arm64/DiscouragedSelectionStore.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/DigitalHealthMonitor.build/Objects-normal/arm64/DiscouragedSelectionStore.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/DigitalHealthMonitor.build/Objects-normal/arm64/DiscouragedSelectionStore.o"
+  },
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/Petals.AI/AppSelectionModel.swift" : {
+    "index-unit-output-path" : "/Petals.AI.build/Release-iphoneos/DigitalHealthMonitor.build/Objects-normal/arm64/AppSelectionModel.o",
+    "llvm-bc" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/DigitalHealthMonitor.build/Objects-normal/arm64/AppSelectionModel.bc",
+    "object" : "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/build/Petals.AI.build/Release-iphoneos/DigitalHealthMonitor.build/Objects-normal/arm64/AppSelectionModel.o"
+  }
+}

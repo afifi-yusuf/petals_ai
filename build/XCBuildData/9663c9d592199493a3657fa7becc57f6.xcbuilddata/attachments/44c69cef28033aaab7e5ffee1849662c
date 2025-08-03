@@ -1,0 +1,4 @@
+module GTMSessionFetcherCore {
+umbrella "/Users/yusufafifi/Library/Developer/Xcode/DerivedData/Petals.AI-gifqbnzbymbzwrefqfiwyhqjjbqh/SourcePackages/checkouts/gtm-session-fetcher/Sources/Core/Public"
+export *
+}

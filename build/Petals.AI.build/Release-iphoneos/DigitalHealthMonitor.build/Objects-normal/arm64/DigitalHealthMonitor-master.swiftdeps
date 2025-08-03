@@ -1,0 +1,8 @@
+version: "Apple Swift version 6.1.2 (swiftlang-6.1.2.1.2 clang-1700.0.13.5)"
+options: "d35e63280bf57d091aa33226e91ce6a7e7c5b1e960483ba774982e8c548b047d"
+build_start_time: [1754247665, 732458000]
+build_end_time: [1754247669, 8802000]
+inputs:
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/DigitalHealthMonitor/DeviceActivityMonitorExtension.swift": !dirty [1754234264, 527341979]
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/DigitalHealthMonitor/DiscouragedSelectionStore.swift": !dirty [1754247467, 87405846]
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/Petals.AI/AppSelectionModel.swift": !dirty [1754139758, 574652374]

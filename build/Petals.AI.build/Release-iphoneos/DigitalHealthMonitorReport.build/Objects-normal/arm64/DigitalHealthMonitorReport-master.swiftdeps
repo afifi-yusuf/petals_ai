@@ -1,0 +1,11 @@
+version: "Apple Swift version 6.1.2 (swiftlang-6.1.2.1.2 clang-1700.0.13.5)"
+options: "41501e1c50efdc2c40046de2e63a97341ccb7fad2626d420f6e4236bb0ad6a67"
+build_start_time: [1754247665, 732496000]
+build_end_time: [1754247669, 9184000]
+inputs:
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/DigitalHealthMonitorReport/DigitalHealthMonitorReport.swift": !dirty [1754234264, 528182103]
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/DigitalHealthMonitorReport/PieChartReport.swift": !dirty [1754234264, 528638685]
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/DigitalHealthMonitorReport/PieChartView.swift": !dirty [1754234264, 528913310]
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/DigitalHealthMonitorReport/ScreenTimeListView.swift": !dirty [1754234264, 529167726]
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/DigitalHealthMonitorReport/TotalActivityReport.swift": !dirty [1754234264, 529402059]
+  "/Users/yusufafifi/Desktop/PetalsAI/Petals.AI/DigitalHealthMonitorReport/TotalActivityView.swift": !dirty [1754234264, 529836266]
