@@ -186,26 +186,10 @@ struct ScreenTimeSummaryCard: View {
 
             // Content
             Group {
-                if screenTimeManager.isAuthorized {
-                    // Your custom report scene (.pieChart) rendered inline
-                    DeviceActivityReport(.pieChart, filter: filter)
-                        .frame(height: 15)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                } else {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Screen Time access needed")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                        Button {
-                            Task { await screenTimeManager.requestAuthorizationIfNeeded() }
-                        } label: {
-                            Text("Grant Access")
-                                .font(.subheadline).fontWeight(.semibold)
-                                .padding(.horizontal, 12).padding(.vertical, 8)
-                                .background(RoundedRectangle(cornerRadius: 10).fill(Color.orange.opacity(0.2)))
-                        }
-                    }
-                }
+                // Your custom report scene (.pieChart) rendered inline
+                DeviceActivityReport(.pieChart, filter: filter)
+                    .frame(height: 15)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
             }
 
             // Footer hint

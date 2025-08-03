@@ -127,6 +127,7 @@ struct SettingsView: View {
         }
         .onAppear {
             screenTimeManager.refreshAuthorizationStatus()
+            refreshHealthKitAuthorization()
         }
     }
     
@@ -142,6 +143,15 @@ struct SettingsView: View {
     private func requestScreenTimePermission() {
         Task {
             await screenTimeManager.requestAuthorizationIfNeeded()
+        }
+    }
+    
+    private func refreshHealthKitAuthorization() {
+        Task {
+            let authorized = await HealthDataManager.shared.isHealthKitAuthorized()
+            await MainActor.run {
+                healthKitAuthorized = authorized
+            }
         }
     }
 }

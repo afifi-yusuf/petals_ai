@@ -521,4 +521,11 @@ class HealthDataManager {
             self.healthStore.execute(query)
         }
     }
+    
+    func isHealthKitAuthorized() async -> Bool {
+        guard HKHealthStore.isHealthDataAvailable() else { return false }
+        let type = HKObjectType.quantityType(forIdentifier: .stepCount)!
+        let status = healthStore.authorizationStatus(for: type)
+        return status == .sharingAuthorized
+    }
 }
