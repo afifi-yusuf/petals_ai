@@ -1,9 +1,22 @@
 // In ChatbotView.swift
 import SwiftUI
+import Speech
+import AVFoundation   // ← add this
 
 struct ChatbotView: View {
     @StateObject private var viewModel = ChatbotViewModel()
     @Environment(\.colorScheme) private var colorScheme
+    @State private var chatText: String = ""
+    @State private var wordLimitReached: Bool = false
+    @State private var showingSaveSuccess = false
+    @State private var isRecording = false
+    
+    // Your speech recognition properties are also great.
+    @State private var speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
+    @State private var recognitionTask: SFSpeechRecognitionTask?
+    let audioEngine = AVAudioEngine()
+    @State private var request = SFSpeechAudioBufferRecognitionRequest()
+
     
     var body: some View {
         ZStack {
@@ -66,7 +79,19 @@ struct ChatbotView: View {
                                     .fill(colorScheme == .dark ? Color(.systemGray5) : Color(.systemGray6))
                             )
                             .clipShape(RoundedRectangle(cornerRadius: 20))
-                            .disabled(viewModel.isLoading)
+                        
+                        Button {
+                            isRecording ? stopRecording() : startRecording()
+                        } label: {
+                           Image(systemName: isRecording ? "stop.circle.fill" : "mic.circle.fill")
+                               .font(.system(size: 32))
+                               .foregroundStyle(
+                                   LinearGradient(colors: [.purple, .blue],
+                                                  startPoint: .topLeading,
+                                                  endPoint: .bottomTrailing)
+                               )
+                       }
+                       .disabled(viewModel.isLoading)
                         
                         Button(action: {
                             viewModel.sendMessage()
@@ -90,9 +115,9 @@ struct ChatbotView: View {
         }
         .navigationTitle("AI Assistant")
         .navigationBarTitleDisplayMode(.inline)
-        
+        .onDisappear { stopRecording() }
     }
-}
+
 
 struct MessageBubble: View {
     let message: ChatMessage
@@ -178,6 +203,60 @@ struct TypingIndicator: View {
         .padding(.horizontal)
         .onAppear {
             animationOffset = -5
+        }
+    }
+}
+
+func startRecording() {
+    requestPermissions()
+
+    let audioSession = AVAudioSession.sharedInstance()
+    try? audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
+    try? audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+
+    request = SFSpeechAudioBufferRecognitionRequest()
+
+    let inputNode = audioEngine.inputNode
+    let recordingFormat = inputNode.outputFormat(forBus: 0)
+
+    inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, _ in
+        request.append(buffer)
+    }
+
+    audioEngine.prepare()
+    try? audioEngine.start()
+
+    recognitionTask = speechRecognizer?.recognitionTask(with: request) { result, error in
+        if let result = result {
+            chatText = result.bestTranscription.formattedString
+        }
+
+        if let error = error {
+            print("❌ Speech error: \(error.localizedDescription)")
+            stopRecording()
+        }
+    }
+}
+
+    func stopRecording() {
+        audioEngine.stop()
+        audioEngine.inputNode.removeTap(onBus: 0)
+        request.endAudio()
+        recognitionTask?.finish()
+        recognitionTask = nil
+    }
+
+    func requestPermissions() {
+        SFSpeechRecognizer.requestAuthorization { status in
+            if status != .authorized {
+                print("❌ Speech recognition not authorized")
+            }
+        }
+
+        AVAudioSession.sharedInstance().requestRecordPermission { granted in
+            if !granted {
+                print("❌ Microphone access not granted")
+            }
         }
     }
 }
