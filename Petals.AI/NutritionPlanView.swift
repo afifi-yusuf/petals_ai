@@ -196,32 +196,37 @@ struct NutritionPlanView: View {
                             ForEach(DietaryApproach.allCases) { Text($0.rawValue).tag($0) }
                         }
                         .pickerStyle(.menu)
+                        .frame(maxWidth: .infinity)
                     }
                     formSection(title: "Primary Goal", icon: "target") {
                         Picker("Goal", selection: $viewModel.primaryGoal) {
                             ForEach(NutritionGoal.allCases) { Text($0.rawValue).tag($0) }
                         }
                         .pickerStyle(.menu)
+                        .frame(maxWidth: .infinity)
                     }
                     formSection(title: "Activity Level", icon: "figure.run") {
                         Picker("Activity Level", selection: $viewModel.activityLevel) {
                             ForEach(ActivityLevel.allCases) { Text($0.rawValue).tag($0) }
                         }
                         .pickerStyle(.segmented)
+                        .frame(maxWidth: .infinity)
                     }
                     formSection(title: "Meals per day: \(Int(viewModel.mealsPerDay))", icon: "fork.knife") {
                         Slider(value: $viewModel.mealsPerDay, in: 3...6, step: 1).accentColor(.green)
+                        .frame(maxWidth: .infinity)
                     }
                     formSection(title: "Cooking Time: \(Int(viewModel.cookingTime)) minutes", icon: "timer") {
                         Slider(value: $viewModel.cookingTime, in: 10...60, step: 10).accentColor(.green)
+                        .frame(maxWidth: .infinity)
                     }
                     formSection(title: "Food Allergies & Restrictions", icon: "exclamationmark.triangle.fill") {
                         TextField("e.g., nuts, dairy, gluten", text: $viewModel.allergiesRestrictions)
-                            .textFieldStyle(.roundedBorder)
+                            .textFieldStyle(.roundedBorder).frame(maxWidth: .infinity)
                     }
                     formSection(title: "Nutrition Focus", icon: "heart.fill") {
                         TextField("e.g., increase protein, reduce sugar", text: $viewModel.customGoals)
-                            .textFieldStyle(.roundedBorder)
+                            .textFieldStyle(.roundedBorder).frame(maxWidth: .infinity)
                     }
                 }
                 .padding(.horizontal)

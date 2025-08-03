@@ -196,28 +196,36 @@ struct WorkoutPlanView: View {
                             ForEach(FitnessLevel.allCases) { Text($0.rawValue).tag($0) }
                         }
                         .pickerStyle(.segmented)
+                        .frame(maxWidth: .infinity)
                     }
                     formSection(title: "Preferred Activity Type", icon: "dumbbell.fill") {
                         Picker("Activity Type", selection: $viewModel.workoutType) {
                             ForEach(WorkoutType.allCases) { Text($0.rawValue).tag($0) }
                         }
                         .pickerStyle(.menu)
+                        .frame(maxWidth: .infinity)
                     }
                     formSection(title: "Target Duration: \(Int(viewModel.duration)) minutes", icon: "clock.fill") {
-                        Slider(value: $viewModel.duration, in: 15...90, step: 15).accentColor(.orange)
+                        Slider(value: $viewModel.duration, in: 15...90, step: 15)
+                            .accentColor(.orange)
+                            .frame(maxWidth: .infinity)
                     }
                     formSection(title: "Sessions per week: \(Int(viewModel.daysPerWeek))", icon: "calendar") {
-                        Slider(value: $viewModel.daysPerWeek, in: 1...7, step: 1).accentColor(.orange)
+                        Slider(value: $viewModel.daysPerWeek, in: 1...7, step: 1)
+                            .accentColor(.orange)
+                            .frame(maxWidth: .infinity)
                     }
                     formSection(title: "Available Equipment", icon: "wrench.and.screwdriver.fill") {
                         Picker("Equipment", selection: $viewModel.equipment) {
                             ForEach(Equipment.allCases) { Text($0.rawValue).tag($0) }
                         }
                         .pickerStyle(.menu)
+                        .frame(maxWidth: .infinity)
                     }
                     formSection(title: "Fitness Interests", icon: "target") {
                         TextField("e.g., improve stamina, build strength", text: $viewModel.customGoals)
                             .textFieldStyle(.roundedBorder)
+                            .frame(maxWidth: .infinity)
                     }
                 }
                 .padding(.horizontal)
@@ -445,6 +453,7 @@ struct WorkoutPlanDetailView: View {
                             Text(workout.notes)
                                 .font(.caption)
                                 .foregroundColor(.secondary)
+                                .italic()
                         }
                     }
                 }
@@ -576,4 +585,3 @@ struct WorkoutPlanDetailView: View {
 #Preview {
     WorkoutPlanView()
 }
-
