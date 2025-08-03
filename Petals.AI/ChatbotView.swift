@@ -1,29 +1,18 @@
-// In ChatbotView.swift
 import SwiftUI
 import Speech
-import AVFoundation   // ← add this
+import AVFoundation
 
+// MARK: - ChatbotView with Advanced STT
 struct ChatbotView: View {
     @StateObject private var viewModel = ChatbotViewModel()
+    @StateObject private var speechRecognizer = SpeechRecognizer()
     @Environment(\.colorScheme) private var colorScheme
-    @State private var chatText: String = ""
-    @State private var wordLimitReached: Bool = false
-    @State private var showingSaveSuccess = false
-    @State private var isRecording = false
-    
-    // Your speech recognition properties are also great.
-    @State private var speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
-    @State private var recognitionTask: SFSpeechRecognitionTask?
-    let audioEngine = AVAudioEngine()
-    @State private var request = SFSpeechAudioBufferRecognitionRequest()
 
-    
     var body: some View {
         ZStack {
-            AnimatedBackground() // Consistent background
-            
+            AnimatedBackground()
             VStack(spacing: 0) {
-                // Header with Logo and Blur Effect
+                // Header
                 HStack {
                     Image("icon")
                         .resizable()
@@ -31,18 +20,10 @@ struct ChatbotView: View {
                         .frame(width: 32, height: 32)
                         .clipShape(Circle())
                         .shadow(color: .purple.opacity(0.3), radius: 4, x: 0, y: 2)
-                    
                     Text("Petals AI")
                         .font(.title3)
                         .fontWeight(.bold)
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [.purple, .blue],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                    
+                        .foregroundStyle(LinearGradient(colors: [.purple, .blue], startPoint: .leading, endPoint: .trailing))
                     Spacer()
                 }
                 .padding()
@@ -51,7 +32,7 @@ struct ChatbotView: View {
                 // Chat messages
                 ScrollViewReader { proxy in
                     ScrollView {
-                        LazyVStack(spacing: 16) { // Increased spacing
+                        LazyVStack(spacing: 16) {
                             ForEach(viewModel.messages) { message in
                                 MessageBubble(message: message)
                             }
@@ -68,7 +49,7 @@ struct ChatbotView: View {
                     }
                 }
                 
-                // Refined Input area
+                // Input Area
                 VStack(spacing: 0) {
                     Divider()
                     HStack(spacing: 16) {
@@ -79,19 +60,24 @@ struct ChatbotView: View {
                                     .fill(colorScheme == .dark ? Color(.systemGray5) : Color(.systemGray6))
                             )
                             .clipShape(RoundedRectangle(cornerRadius: 20))
+                            .onChange(of: speechRecognizer.recognizedText) { newValue in
+                                if speechRecognizer.isRecording {
+                                    viewModel.inputMessage = newValue
+                                }
+                            }
                         
                         Button {
-                            isRecording ? stopRecording() : startRecording()
+                            speechRecognizer.isRecording ? speechRecognizer.stopRecording() : speechRecognizer.startRecording()
                         } label: {
-                           Image(systemName: isRecording ? "stop.circle.fill" : "mic.circle.fill")
-                               .font(.system(size: 32))
-                               .foregroundStyle(
-                                   LinearGradient(colors: [.purple, .blue],
-                                                  startPoint: .topLeading,
-                                                  endPoint: .bottomTrailing)
-                               )
-                       }
-                       .disabled(viewModel.isLoading)
+                            Image(systemName: speechRecognizer.isRecording ? "stop.circle.fill" : "mic.circle.fill")
+                                .font(.system(size: 32))
+                                .foregroundStyle(
+                                    LinearGradient(colors: [.purple, .blue],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing)
+                                )
+                        }
+                        .disabled(viewModel.isLoading)
                         
                         Button(action: {
                             viewModel.sendMessage()
@@ -99,11 +85,9 @@ struct ChatbotView: View {
                             Image(systemName: "arrow.up.circle.fill")
                                 .font(.system(size: 32))
                                 .foregroundStyle(
-                                    LinearGradient(
-                                        colors: [.purple, .blue],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
+                                    LinearGradient(colors: [.purple, .blue],
+                                                   startPoint: .topLeading,
+                                                   endPoint: .bottomTrailing)
                                 )
                         }
                         .disabled(viewModel.inputMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isLoading)
@@ -115,9 +99,9 @@ struct ChatbotView: View {
         }
         .navigationTitle("AI Assistant")
         .navigationBarTitleDisplayMode(.inline)
-        .onDisappear { stopRecording() }
+        .onDisappear { speechRecognizer.stopRecording() }
     }
-
+}
 
 struct MessageBubble: View {
     let message: ChatMessage
@@ -128,7 +112,6 @@ struct MessageBubble: View {
             if message.isUser {
                 Spacer()
             }
-            
             Text(message.content)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
@@ -137,7 +120,6 @@ struct MessageBubble: View {
                 .clipShape(ChatBubbleShape(isFromCurrentUser: message.isUser))
                 .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
                 .frame(maxWidth: UIScreen.main.bounds.width * 0.75, alignment: message.isUser ? .trailing : .leading)
-            
             if !message.isUser {
                 Spacer()
             }
@@ -207,62 +189,9 @@ struct TypingIndicator: View {
     }
 }
 
-func startRecording() {
-    requestPermissions()
-
-    let audioSession = AVAudioSession.sharedInstance()
-    try? audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
-    try? audioSession.setActive(true, options: .notifyOthersOnDeactivation)
-
-    request = SFSpeechAudioBufferRecognitionRequest()
-
-    let inputNode = audioEngine.inputNode
-    let recordingFormat = inputNode.outputFormat(forBus: 0)
-
-    inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, _ in
-        request.append(buffer)
-    }
-
-    audioEngine.prepare()
-    try? audioEngine.start()
-
-    recognitionTask = speechRecognizer?.recognitionTask(with: request) { result, error in
-        if let result = result {
-            chatText = result.bestTranscription.formattedString
-        }
-
-        if let error = error {
-            print("❌ Speech error: \(error.localizedDescription)")
-            stopRecording()
-        }
-    }
-}
-
-    func stopRecording() {
-        audioEngine.stop()
-        audioEngine.inputNode.removeTap(onBus: 0)
-        request.endAudio()
-        recognitionTask?.finish()
-        recognitionTask = nil
-    }
-
-    func requestPermissions() {
-        SFSpeechRecognizer.requestAuthorization { status in
-            if status != .authorized {
-                print("❌ Speech recognition not authorized")
-            }
-        }
-
-        AVAudioSession.sharedInstance().requestRecordPermission { granted in
-            if !granted {
-                print("❌ Microphone access not granted")
-            }
-        }
-    }
-}
-
 #Preview {
     NavigationView {
         ChatbotView()
     }
 }
+
