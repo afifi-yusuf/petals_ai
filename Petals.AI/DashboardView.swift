@@ -86,6 +86,7 @@ struct DashboardView: View {
                 await getLatestStreak()
                 moodManager.currentStreak = streak
             }
+            screenTimeManager.refreshAuthorizationStatus()
         }
         
         .fullScreenCover(isPresented: $showingMeditation) {
