@@ -9,6 +9,7 @@ extension DeviceActivityReport.Context {
 // MARK: - Main View
 struct BlockAppPicker: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
 
     // MARK: State Management
     // Selections for each schedule
@@ -21,21 +22,9 @@ struct BlockAppPicker: View {
     @State private var isWorkPickerPresented = false
     @State private var isEveningPickerPresented = false
 
-    // App-specific settings
-    @State private var appStartTimes: [String: Int] = [:]
-    @State private var appEndTimes: [String: Int] = [:]
-    @State private var appEnabled: [String: Bool] = [:]
-    @State private var appNames: [String: String] = [:]
-
     // UI state
-    @State private var expandedApps = Set<String>()
-    @State private var showingDeleteConfirmation = false
     @State private var showingHelpSheet = false
     @State private var isSaving = false
-
-    // For nickname prompt
-    @State private var newAppIdToName: String? = nil
-    @State private var pendingAppName: String = ""
 
     // A single model instance to interact with the system's apply method
     private let systemAppModel = AppSelectionModel()
@@ -49,299 +38,291 @@ struct BlockAppPicker: View {
         ]
     }
     
-    private var allSelectedAppIds: Set<String> {
-        let allTokens = morningSelection.applicationTokens
-            .union(workSelection.applicationTokens)
-            .union(eveningSelection.applicationTokens)
-        return Set(allTokens.map { String($0.hashValue) })
-    }
-
-    private var hasAnySelection: Bool {
-        !allSelectedAppIds.isEmpty
-    }
-
     // MARK: Body
     var body: some View {
         NavigationStack {
-            Form {
-                appSelectionSections
+            ZStack {
+                Color(.systemBackground).ignoresSafeArea()
                 
-                if hasAnySelection {
-                    scheduledAppsSections
-                    actionSection
+                VStack(spacing: 0) {
+                    // Header
+                    headerSection
+                    
+                    // Main content
+                    ScrollView {
+                        LazyVStack(spacing: 24) {
+                            scheduleSections
+                            
+                            actionSection
+                            
+                            helpSection
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 32)
+                    }
                 }
-                
-                helpSection
             }
-            .navigationTitle("App Restrictions")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbarItems }
             .sheet(isPresented: $showingHelpSheet) { helpSheet }
-            .sheet(item: $newAppIdToName) { appId in // Corrected .sheet syntax
-                nicknamePrompt(for: appId)
-            }
-            .confirmationDialog("Remove All Restrictions", isPresented: $showingDeleteConfirmation, titleVisibility: .visible) {
-                deleteAllButton
-            } message: {
-                Text("This will clear all schedules and remove all app restrictions.")
-            }
             .onAppear(perform: loadAllSettings)
-            .onChange(of: isMorningPickerPresented) { _, isPresented in handlePickerDismiss(isPresented: isPresented, for: .morning) }
-            .onChange(of: isWorkPickerPresented) { _, isPresented in handlePickerDismiss(isPresented: isPresented, for: .work) }
-            .onChange(of: isEveningPickerPresented) { _, isPresented in handlePickerDismiss(isPresented: isPresented, for: .evening) }
         }
     }
 }
 
 // MARK: - View Components
 private extension BlockAppPicker {
-    var appSelectionSections: some View {
-        Section {
-            ForEach(schedules, id: \.name) { schedule in
-                SchedulePickerRow(schedule: schedule)
-            }
-        } header: {
-            Text("Schedules")
-        } footer: {
-            Text("Select apps to restrict during different parts of your day.")
+    var headerSection: some View {
+        HStack {
+            Image(systemName: "shield.fill")
+                .resizable()
+                .scaledToFill()
+                .frame(width: 32, height: 32)
+                .foregroundStyle(LinearGradient(colors: [.purple, .blue], startPoint: .leading, endPoint: .trailing))
+                .shadow(color: .purple.opacity(0.3), radius: 4, x: 0, y: 2)
+            
+            Text("App Restrictions")
+                .font(.title3)
+                .fontWeight(.bold)
+                .foregroundStyle(LinearGradient(colors: [.purple, .blue], startPoint: .leading, endPoint: .trailing))
+            
+            Spacer()
         }
+        .padding()
+        .background(.ultraThinMaterial)
     }
-
-    var scheduledAppsSections: some View {
-        ForEach(schedules.filter { !$0.selection.wrappedValue.applicationTokens.isEmpty }, id: \.name) { schedule in
-            Section(header: Text("\(schedule.name) Schedule")) {
-                let appIds = schedule.selection.wrappedValue.applicationTokens.map { String($0.hashValue) }
-                ForEach(Array(appIds.enumerated()), id: \.element) { index, appId in
-                    AppTimeRow(
-                        appId: appId,
-                        appName: appNames[appId] ?? "Unnamed App",
-                        appIndex: index + 1,
-                        isExpanded: expandedApps.contains(appId),
-                        startMinutes: appStartTimes[appId] ?? (17 * 60),
-                        endMinutes: appEndTimes[appId] ?? (20 * 60),
-                        isEnabled: appEnabled[appId] ?? true,
-                        onToggleExpansion: { toggleExpansion(for: appId) },
-                        onTimeUpdate: { start, end in updateTime(for: appId, start: start, end: end) },
-                        onToggleEnabled: { toggleEnabled(for: appId) }
-                    )
+    
+    var scheduleSections: some View {
+        VStack(spacing: 16) {
+            HStack {
+                Text("Daily Schedules")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.primary)
+                Spacer()
+            }
+            .padding(.top, 8)
+            
+            LazyVStack(spacing: 12) {
+                ForEach(schedules, id: \.name) { schedule in
+                    EnhancedSchedulePickerRow(schedule: schedule)
                 }
             }
         }
     }
 
     var actionSection: some View {
-        Section {
+        VStack(spacing: 16) {
             applyButton
-            removeButton
+            
+            Text("Changes will take effect immediately and apply to all selected apps during their scheduled times.")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 8)
         }
     }
     
     var applyButton: some View {
         Button(action: applyAllChanges) {
-            HStack {
+            HStack(spacing: 12) {
                 if isSaving {
-                    ProgressView().scaleEffect(0.8)
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .scaleEffect(0.9)
                 } else {
                     Image(systemName: "clock.arrow.circlepath")
+                        .font(.title3)
+                        .fontWeight(.medium)
                 }
-                Text(isSaving ? "Applying..." : "Apply All Schedules")
+                
+                Text(isSaving ? "Applying Changes..." : "Apply All Schedules")
+                    .font(.headline)
+                    .fontWeight(.semibold)
             }
+            .foregroundColor(.white)
             .frame(maxWidth: .infinity)
+            .frame(height: 54)
+            .background(
+                LinearGradient(
+                    colors: isSaving ? [.gray.opacity(0.6), .gray.opacity(0.8)] : [.purple, .blue],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .shadow(color: .purple.opacity(0.3), radius: 8, x: 0, y: 4)
         }
-        .buttonStyle(.borderedProminent)
         .disabled(isSaving)
-    }
-
-    var removeButton: some View {
-        Button(role: .destructive) {
-            showingDeleteConfirmation = true
-        } label: {
-            HStack {
-                Image(systemName: "trash")
-                Text("Remove All Restrictions")
-            }
-            .frame(maxWidth: .infinity)
-        }
-    }
-    
-    var deleteAllButton: some View {
-        Button("Remove All", role: .destructive) {
-            morningSelection = FamilyActivitySelection()
-            workSelection = FamilyActivitySelection()
-            eveningSelection = FamilyActivitySelection()
-            
-            appStartTimes.removeAll()
-            appEndTimes.removeAll()
-            appEnabled.removeAll()
-            appNames.removeAll()
-            
-            applyAllChanges()
-        }
+        .animation(.easeInOut(duration: 0.2), value: isSaving)
     }
 
     var helpSection: some View {
-        Section {
-            Button {
-                showingHelpSheet = true
-            } label: {
-                HStack {
-                    Image(systemName: "questionmark.circle").foregroundStyle(.blue)
-                    Text("How Schedules Work").foregroundStyle(.primary)
-                    Spacer()
-                    Image(systemName: "chevron.right").foregroundStyle(.tertiary).font(.caption)
+        Button {
+            showingHelpSheet = true
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "questionmark.circle.fill")
+                    .font(.title2)
+                    .foregroundStyle(LinearGradient(colors: [.purple, .blue], startPoint: .leading, endPoint: .trailing))
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("How Schedules Work")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    Text("Learn about app blocking schedules")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundStyle(.tertiary)
             }
+            .padding(16)
+            .background(.ultraThinMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
         }
+        .buttonStyle(.plain)
     }
 
     var toolbarItems: some ToolbarContent {
         Group {
             ToolbarItem(placement: .topBarLeading) {
-                Button("Done") { dismiss() }
+                Button("Done") {
+                    dismiss()
+                }
+                .font(.headline)
+                .foregroundStyle(LinearGradient(colors: [.purple, .blue], startPoint: .leading, endPoint: .trailing))
             }
+            
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     showingHelpSheet = true
                 } label: {
                     Image(systemName: "questionmark.circle")
+                        .font(.title3)
+                        .foregroundStyle(LinearGradient(colors: [.purple, .blue], startPoint: .leading, endPoint: .trailing))
                 }
             }
         }
     }
     
-    func nicknamePrompt(for appId: String) -> some View {
-        NavigationStack {
-            VStack(spacing: 20) {
-                Text("Give this app a nickname:").font(.headline)
-                TextField("App name", text: $pendingAppName)
-                    .textFieldStyle(.roundedBorder)
+    var helpSheet: some View {
+        NavigationView {
+            ZStack {
+                AnimatedBackground()
+                
+                VStack(spacing: 0) {
+                    // Header for help sheet
+                    HStack {
+                        Image(systemName: "questionmark.circle.fill")
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 32, height: 32)
+                            .foregroundStyle(LinearGradient(colors: [.purple, .blue], startPoint: .leading, endPoint: .trailing))
+                            .shadow(color: .purple.opacity(0.3), radius: 4, x: 0, y: 2)
+                        
+                        Text("Schedule Help")
+                            .font(.title3)
+                            .fontWeight(.bold)
+                            .foregroundStyle(LinearGradient(colors: [.purple, .blue], startPoint: .leading, endPoint: .trailing))
+                        
+                        Spacer()
+                    }
                     .padding()
-                Button("Save") {
-                    saveNickname(for: appId)
-                    findNextAppToName()
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(pendingAppName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            }
-            .padding()
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Skip") {
-                        saveNickname(for: appId, isSkipped: true)
-                        findNextAppToName()
+                    .background(.ultraThinMaterial)
+                    
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 20) {
+                            Text("Understanding Schedule-Based App Blocking")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .padding(.top)
+                            
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("How It Works")
+                                    .font(.headline)
+                                    .foregroundStyle(LinearGradient(colors: [.purple, .blue], startPoint: .leading, endPoint: .trailing))
+                                
+                                Text("Select specific apps to block during different parts of your day. When a schedule is active, the selected apps will be restricted and require Screen Time passcode to access.")
+                                    .font(.body)
+                                    .foregroundColor(.secondary)
+                                    .padding()
+                                    .background(.ultraThinMaterial)
+                                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Schedule Times")
+                                    .font(.headline)
+                                    .foregroundStyle(LinearGradient(colors: [.purple, .blue], startPoint: .leading, endPoint: .trailing))
+                                
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Label("Morning: 7:00 AM - 9:00 AM", systemImage: "sunrise.fill")
+                                        .foregroundColor(.orange)
+                                    Label("Work: 9:00 AM - 5:00 PM", systemImage: "briefcase.fill")
+                                        .foregroundColor(.blue)
+                                    Label("Evening: 8:00 PM - 10:00 PM", systemImage: "moon.fill")
+                                        .foregroundColor(.indigo)
+                                }
+                                .font(.subheadline)
+                                .padding()
+                                .background(.ultraThinMaterial)
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                            }
+                            
+                            Spacer()
+                        }
+                        .padding()
                     }
                 }
             }
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarBackButtonHidden()
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        showingHelpSheet = false
+                    }
+                    .foregroundStyle(LinearGradient(colors: [.purple, .blue], startPoint: .leading, endPoint: .trailing))
+                }
+            }
         }
-    }
-
-    var helpSheet: some View {
-        // The helpSheet view from your original code can be pasted here without changes.
-        // For brevity, it's omitted but assumed to be present.
-        Text("Help Content Goes Here")
-            .padding()
     }
 }
 
-
 // MARK: - Logic & Helper Methods
 private extension BlockAppPicker {
-    enum ScheduleType { case morning, work, evening }
-
-    func handlePickerDismiss(isPresented: Bool, for type: ScheduleType) {
-        guard !isPresented else { return }
-        
-        ensureUniqueSelections(from: type)
-        syncTimeWindowsWithSelections()
-        saveAllSettings()
-        findNextAppToName()
+    enum ScheduleType: String, CaseIterable {
+        case morning, work, evening
     }
 
-    func ensureUniqueSelections(from updatedSchedule: ScheduleType) {
-        switch updatedSchedule {
-        case .morning:
-            workSelection.applicationTokens.subtract(morningSelection.applicationTokens)
-            eveningSelection.applicationTokens.subtract(morningSelection.applicationTokens)
-        case .work:
-            morningSelection.applicationTokens.subtract(workSelection.applicationTokens)
-            eveningSelection.applicationTokens.subtract(workSelection.applicationTokens)
-        case .evening:
-            morningSelection.applicationTokens.subtract(eveningSelection.applicationTokens)
-            workSelection.applicationTokens.subtract(eveningSelection.applicationTokens)
-        }
-    }
-
-    func syncTimeWindowsWithSelections() {
-        appStartTimes = appStartTimes.filter { allSelectedAppIds.contains($0.key) }
-        appEndTimes = appEndTimes.filter { allSelectedAppIds.contains($0.key) }
-        appEnabled = appEnabled.filter { allSelectedAppIds.contains($0.key) }
-        appNames = appNames.filter { allSelectedAppIds.contains($0.key) }
-
-        for id in allSelectedAppIds {
-            if appStartTimes[id] == nil { appStartTimes[id] = 17 * 60 } // Default 5 PM
-            if appEndTimes[id] == nil { appEndTimes[id] = 20 * 60 }   // Default 8 PM
-            if appEnabled[id] == nil { appEnabled[id] = true }
-        }
-    }
-    
-    func findNextAppToName() {
-        if let nextId = allSelectedAppIds.first(where: { appNames[$0] == nil }) {
-            newAppIdToName = nextId
-            pendingAppName = ""
-        } else {
-            newAppIdToName = nil
-        }
-    }
-    
-    func saveNickname(for appId: String, isSkipped: Bool = false) {
-        if isSkipped {
-            appNames[appId] = "Unnamed App"
-        } else {
-            appNames[appId] = pendingAppName.isEmpty ? "Unnamed App" : pendingAppName
-        }
-        saveTimeWindowsToUserDefaults()
-    }
-
-    func toggleExpansion(for appId: String) {
-        if expandedApps.contains(appId) {
-            expandedApps.remove(appId)
-        } else {
-            expandedApps.insert(appId)
-        }
-    }
-
-    func updateTime(for appId: String, start: Int, end: Int) {
-        appStartTimes[appId] = start
-        appEndTimes[appId] = end
-        saveTimeWindowsToUserDefaults()
-    }
-
-    func toggleEnabled(for appId: String) {
-        appEnabled[appId] = !(appEnabled[appId] ?? true)
-        saveTimeWindowsToUserDefaults()
-    }
-    
     // MARK: Core Actions
     func applyAllChanges() {
         isSaving = true
         saveAllSettings()
 
-        var combinedSelection = FamilyActivitySelection()
-        combinedSelection.applicationTokens = morningSelection.applicationTokens.union(workSelection.applicationTokens).union(eveningSelection.applicationTokens)
-        combinedSelection.categoryTokens = morningSelection.categoryTokens.union(workSelection.categoryTokens).union(eveningSelection.categoryTokens)
-        combinedSelection.webDomainTokens = morningSelection.webDomainTokens.union(workSelection.webDomainTokens).union(eveningSelection.webDomainTokens)
+        for scheduleType in ScheduleType.allCases {
+            let selection = selection(for: scheduleType)
+            let scheduleName = DeviceActivityName(rawValue: scheduleType.rawValue)
+            let schedule = schedule(for: scheduleType)
 
-        systemAppModel.selectionToDiscourage = combinedSelection
-        systemAppModel.apply()
+            systemAppModel.selectionToDiscourage = selection
+            systemAppModel.apply()
 
-        for appId in allSelectedAppIds {
-            guard appEnabled[appId] == true else { continue }
-            let startMin = appStartTimes[appId] ?? (17 * 60)
-            let endMin = appEndTimes[appId] ?? (20 * 60)
-            let start = DateComponents(hour: startMin / 60, minute: startMin % 60)
-            let end = DateComponents(hour: endMin / 60, minute: endMin % 60)
+            let start = DateComponents(hour: schedule.start.hour, minute: schedule.start.minute)
+            let end = DateComponents(hour: schedule.end.hour, minute: schedule.end.minute)
+
             Task {
-                // ScreenTimeManager.shared.startDailyWindow(start: start, end: end)
+                ScreenTimeManager.shared.startDailyWindow(start: start, end: end, activityName: scheduleName)
             }
         }
 
@@ -351,10 +332,42 @@ private extension BlockAppPicker {
         }
     }
 
+    func selection(for type: ScheduleType) -> FamilyActivitySelection {
+        switch type {
+        case .morning:
+            return morningSelection
+        case .work:
+            return workSelection
+        case .evening:
+            return eveningSelection
+        }
+    }
+
+    func schedule(for type: ScheduleType) -> (start: DateComponents, end: DateComponents) {
+        let startHour: Int
+        let endHour: Int
+
+        switch type {
+        case .morning:
+            startHour = 7
+            endHour = 9
+        case .work:
+            startHour = 9
+            endHour = 17
+        case .evening:
+            startHour = 20
+            endHour = 22
+        }
+
+        let start = DateComponents(hour: startHour, minute: 0)
+        let end = DateComponents(hour: endHour, minute: 0)
+
+        return (start, end)
+    }
+
     // MARK: Persistence
     func saveAllSettings() {
         ScheduleStore.save(morning: morningSelection, work: workSelection, evening: eveningSelection)
-        saveTimeWindowsToUserDefaults()
     }
 
     func loadAllSettings() {
@@ -362,24 +375,6 @@ private extension BlockAppPicker {
         morningSelection = schedules.morning
         workSelection = schedules.work
         eveningSelection = schedules.evening
-        loadTimeWindowsFromUserDefaults()
-        syncTimeWindowsWithSelections()
-    }
-
-    func saveTimeWindowsToUserDefaults() {
-        let suite = UserDefaults(suiteName: ScheduleStore.suiteName)
-        suite?.set(appStartTimes, forKey: "appStartTimes")
-        suite?.set(appEndTimes, forKey: "appEndTimes")
-        suite?.set(appEnabled, forKey: "appEnabled")
-        suite?.set(appNames, forKey: "appNames")
-    }
-
-    func loadTimeWindowsFromUserDefaults() {
-        let suite = UserDefaults(suiteName: ScheduleStore.suiteName)
-        appStartTimes = suite?.object(forKey: "appStartTimes") as? [String: Int] ?? [:]
-        appEndTimes = suite?.object(forKey: "appEndTimes") as? [String: Int] ?? [:]
-        appEnabled = suite?.object(forKey: "appEnabled") as? [String: Bool] ?? [:]
-        appNames = suite?.object(forKey: "appNames") as? [String: String] ?? [:]
     }
 }
 
@@ -393,36 +388,109 @@ private struct Schedule {
     var isPickerPresented: Binding<Bool>
 }
 
-/// A reusable view for the row that presents the FamilyActivityPicker.
-private struct SchedulePickerRow: View {
+/// An enhanced schedule picker row with ChatbotView design consistency
+private struct EnhancedSchedulePickerRow: View {
     let schedule: Schedule
+    @Environment(\.colorScheme) private var colorScheme
     
     private var selectionCount: Int {
         schedule.selection.wrappedValue.applicationTokens.count
+    }
+
+    private var timeInterval: String {
+        switch schedule.name {
+        case "Morning":
+            return "7:00 AM - 9:00 AM"
+        case "Work":
+            return "9:00 AM - 5:00 PM"
+        case "Evening":
+            return "8:00 PM - 10:00 PM"
+        default:
+            return ""
+        }
+    }
+    
+    private var statusText: String {
+        selectionCount == 0 ? "Tap to select apps" : "\(selectionCount) app\(selectionCount == 1 ? "" : "s") selected"
     }
 
     var body: some View {
         Button {
             schedule.isPickerPresented.wrappedValue = true
         } label: {
-            HStack {
-                Image(systemName: schedule.icon)
-                    .font(.title3)
-                    .foregroundStyle(schedule.color)
-                    .frame(width: 30)
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(schedule.name).foregroundStyle(.primary)
-                    Text(selectionCount == 0 ? "Select apps" : "\(selectionCount) app\(selectionCount == 1 ? "" : "s")")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+            HStack(spacing: 16) {
+                // Icon with background
+                ZStack {
+                    Circle()
+                        .fill(schedule.color.opacity(0.15))
+                        .frame(width: 50, height: 50)
+                    
+                    Image(systemName: schedule.icon)
+                        .font(.title2)
+                        .fontWeight(.medium)
+                        .foregroundStyle(schedule.color)
                 }
                 
-                Spacer()
-                Image(systemName: "chevron.right").foregroundStyle(.tertiary).font(.caption)
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text(schedule.name)
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.primary)
+                        
+                        Spacer()
+                        
+                        if selectionCount > 0 {
+                            HStack(spacing: 4) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(.green)
+                                
+                                Text("\(selectionCount)")
+                                    .font(.caption)
+                                    .fontWeight(.medium)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(
+                                        LinearGradient(
+                                            colors: [.purple.opacity(0.2), .blue.opacity(0.2)],
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                    )
+                                    .clipShape(Capsule())
+                                    .foregroundStyle(LinearGradient(colors: [.purple, .blue], startPoint: .leading, endPoint: .trailing))
+                            }
+                        }
+                    }
+                    
+                    Text(timeInterval)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(.secondary)
+                    
+                    Text(statusText)
+                        .font(.caption)
+                        .foregroundStyle(
+                            selectionCount == 0 ?
+                            LinearGradient(colors: [.purple, .blue], startPoint: .leading, endPoint: .trailing) :
+                            LinearGradient(colors: [.green], startPoint: .leading, endPoint: .trailing)
+                        )
+                }
+                
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundStyle(.tertiary)
             }
+            .padding(16)
+            .background(.ultraThinMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
         }
+        .buttonStyle(.plain)
         .familyActivityPicker(isPresented: schedule.isPickerPresented, selection: schedule.selection)
+        .animation(.easeInOut(duration: 0.2), value: selectionCount)
     }
 }
 
@@ -458,139 +526,7 @@ private enum ScheduleStore {
     }
 }
 
-// MARK: - AppTimeRow (Restored from your original code)
-struct AppTimeRow: View {
-    let appId: String
-    let appName: String
-    let appIndex: Int
-    let isExpanded: Bool
-    let startMinutes: Int
-    let endMinutes: Int
-    let isEnabled: Bool
-    let onToggleExpansion: () -> Void
-    let onTimeUpdate: (Int, Int) -> Void
-    let onToggleEnabled: () -> Void
-     
-    @State private var localStartMinutes: Int
-    @State private var localEndMinutes: Int
-
-    init(appId: String, appName: String, appIndex: Int, isExpanded: Bool, startMinutes: Int, endMinutes: Int, isEnabled: Bool, onToggleExpansion: @escaping () -> Void, onTimeUpdate: @escaping (Int, Int) -> Void, onToggleEnabled: @escaping () -> Void) {
-        self.appId = appId
-        self.appName = appName
-        self.appIndex = appIndex
-        self.isExpanded = isExpanded
-        self.startMinutes = startMinutes
-        self.endMinutes = endMinutes
-        self.isEnabled = isEnabled
-        self.onToggleExpansion = onToggleExpansion
-        self.onTimeUpdate = onTimeUpdate
-        self.onToggleEnabled = onToggleEnabled
-        self._localStartMinutes = State(initialValue: startMinutes)
-        self._localEndMinutes = State(initialValue: endMinutes)
-    }
-     
-    private var startBinding: Binding<Date> {
-        Binding(
-            get: {
-                Calendar.current.date(bySettingHour: localStartMinutes / 60, minute: localStartMinutes % 60, second: 0, of: Date()) ?? Date()
-            },
-            set: { date in
-                localStartMinutes = Calendar.current.component(.hour, from: date) * 60 + Calendar.current.component(.minute, from: date)
-                onTimeUpdate(localStartMinutes, localEndMinutes)
-            }
-        )
-    }
-     
-    private var endBinding: Binding<Date> {
-        Binding(
-            get: {
-                Calendar.current.date(bySettingHour: localEndMinutes / 60, minute: localEndMinutes % 60, second: 0, of: Date()) ?? Date()
-            },
-            set: { date in
-                localEndMinutes = Calendar.current.component(.hour, from: date) * 60 + Calendar.current.component(.minute, from: date)
-                onTimeUpdate(localStartMinutes, localEndMinutes)
-            }
-        )
-    }
-     
-    var body: some View {
-        VStack(spacing: 0) {
-            Button(action: onToggleExpansion) {
-                HStack {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(.blue.opacity(0.2))
-                        .frame(width: 32, height: 32)
-                        .overlay {
-                            Image(systemName: "app")
-                                .foregroundStyle(.blue)
-                        }
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(appName)
-                            .font(.headline)
-                            .foregroundStyle(.primary)
-                        Text(timeRangeText)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Toggle("", isOn: .constant(isEnabled))
-                        .onTapGesture {
-                            onToggleEnabled()
-                        }
-                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .foregroundStyle(.tertiary)
-                        .font(.caption)
-                }
-            }
-            .buttonStyle(.plain)
-            if isExpanded {
-                VStack(spacing: 16) {
-                    Divider()
-                        .padding(.top, 8)
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text("Start Time")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                            DatePicker(
-                                "Start",
-                                selection: startBinding,
-                                displayedComponents: .hourAndMinute
-                            )
-                            .labelsHidden()
-                        }
-                        Spacer()
-                        VStack(alignment: .trailing) {
-                            Text("End Time")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                            DatePicker(
-                                "End",
-                                selection: endBinding,
-                                displayedComponents: .hourAndMinute
-                            )
-                            .labelsHidden()
-                        }
-                    }
-                }
-                .padding(.bottom, 8)
-            }
-        }
-    }
-     
-    private var timeRangeText: String {
-        let startHour = localStartMinutes / 60
-        let startMin = localStartMinutes % 60
-        let endHour = localEndMinutes / 60
-        let endMin = localEndMinutes % 60
-        let status = isEnabled ? "Active" : "Disabled"
-        let timeRange = String(format: "%02d:%02d - %02d:%02d", startHour, startMin, endHour, endMin)
-        return "\(timeRange) • \(status)"
-    }
-}
-
 // MARK: - Required Extension for .sheet(item:)
 extension String: Identifiable {
     public var id: String { self }
 }
-

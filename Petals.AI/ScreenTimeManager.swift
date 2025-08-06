@@ -3,6 +3,10 @@ import DeviceActivity
 import ManagedSettings
 import Foundation
 
+enum ScheduleType: String, CaseIterable {
+    case morning, work, evening
+}
+
 extension DeviceActivityName {
     static let userWindow = Self("userWindow")
 }
@@ -28,20 +32,19 @@ final class ScreenTimeManager: ObservableObject {
         refreshAuthorizationStatus()
     }
 
-    func startDailyWindow(start: DateComponents, end: DateComponents) {
-        center.stopMonitoring([.userWindow])  // not throwing
+    func startDailyWindow(start: DateComponents, end: DateComponents, activityName: DeviceActivityName) {
+        center.stopMonitoring([activityName])  // not throwing
         let schedule = DeviceActivitySchedule(intervalStart: start,
                                               intervalEnd: end,
                                               repeats: true)
         do {
-            try center.startMonitoring(.userWindow, during: schedule)
+            try center.startMonitoring(activityName, during: schedule)
         } catch {
             print("startMonitoring failed: \(error)")
         }
     }
 
     func stopDailyWindow() {
-        center.stopMonitoring([.userWindow])
+        center.stopMonitoring(ScheduleType.allCases.map { DeviceActivityName(rawValue: $0.rawValue) })
     }
 }
-

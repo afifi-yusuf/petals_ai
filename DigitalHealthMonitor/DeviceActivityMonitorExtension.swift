@@ -8,18 +8,18 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
     // Inside the scheduled window → allow
     override func intervalDidStart(for activity: DeviceActivityName) {
         super.intervalDidStart(for: activity)
-        store.shield.applications = nil
-    }
-
-    // Outside the window → block selected apps
-    override func intervalDidEnd(for activity: DeviceActivityName) {
-        super.intervalDidEnd(for: activity)
         if let sel = DiscouragedSelectionStore.load() {
             let tokens = sel.applicationTokens
             store.shield.applications = tokens.isEmpty ? nil : tokens
         } else {
             store.shield.applications = nil
         }
+    }
+
+    // Outside the window → allow
+    override func intervalDidEnd(for activity: DeviceActivityName) {
+        super.intervalDidEnd(for: activity)
+        store.shield.applications = nil
     }
 
     // If you also use a usage-limit event, handle it here:
