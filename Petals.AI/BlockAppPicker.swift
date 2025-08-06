@@ -16,11 +16,17 @@ struct BlockAppPicker: View {
     @State private var morningSelection = FamilyActivitySelection()
     @State private var workSelection = FamilyActivitySelection()
     @State private var eveningSelection = FamilyActivitySelection()
+    @State private var customSelection = FamilyActivitySelection()
 
     // Picker presentation states
     @State private var isMorningPickerPresented = false
     @State private var isWorkPickerPresented = false
     @State private var isEveningPickerPresented = false
+    @State private var isCustomPickerPresented = false
+
+    // Custom schedule time pickers
+    @State private var customStartTime = Date()
+    @State private var customEndTime = Date()
 
     // UI state
     @State private var showingHelpSheet = false
@@ -34,7 +40,8 @@ struct BlockAppPicker: View {
         [
             Schedule(name: "Morning", icon: "sunrise.fill", color: .orange, selection: $morningSelection, isPickerPresented: $isMorningPickerPresented),
             Schedule(name: "Work", icon: "briefcase.fill", color: .blue, selection: $workSelection, isPickerPresented: $isWorkPickerPresented),
-            Schedule(name: "Evening", icon: "moon.fill", color: .indigo, selection: $eveningSelection, isPickerPresented: $isEveningPickerPresented)
+            Schedule(name: "Evening", icon: "moon.fill", color: .indigo, selection: $eveningSelection, isPickerPresented: $isEveningPickerPresented),
+            Schedule(name: "Custom", icon: "slider.horizontal.3", color: .green, selection: $customSelection, isPickerPresented: $isCustomPickerPresented, startTime: $customStartTime, endTime: $customEndTime)
         ]
     }
     
@@ -302,7 +309,7 @@ private extension BlockAppPicker {
 // MARK: - Logic & Helper Methods
 private extension BlockAppPicker {
     enum ScheduleType: String, CaseIterable {
-        case morning, work, evening
+        case morning, work, evening, custom
     }
 
     // MARK: Core Actions
@@ -340,34 +347,29 @@ private extension BlockAppPicker {
             return workSelection
         case .evening:
             return eveningSelection
+        case .custom:
+            return customSelection
         }
     }
 
     func schedule(for type: ScheduleType) -> (start: DateComponents, end: DateComponents) {
-        let startHour: Int
-        let endHour: Int
-
         switch type {
         case .morning:
-            startHour = 7
-            endHour = 9
+            return (start: DateComponents(hour: 7, minute: 0), end: DateComponents(hour: 9, minute: 0))
         case .work:
-            startHour = 9
-            endHour = 17
+            return (start: DateComponents(hour: 9, minute: 0), end: DateComponents(hour: 17, minute: 0))
         case .evening:
-            startHour = 20
-            endHour = 22
+            return (start: DateComponents(hour: 20, minute: 0), end: DateComponents(hour: 22, minute: 0))
+        case .custom:
+            let start = Calendar.current.dateComponents([.hour, .minute], from: customStartTime)
+            let end = Calendar.current.dateComponents([.hour, .minute], from: customEndTime)
+            return (start: start, end: end)
         }
-
-        let start = DateComponents(hour: startHour, minute: 0)
-        let end = DateComponents(hour: endHour, minute: 0)
-
-        return (start, end)
     }
 
     // MARK: Persistence
     func saveAllSettings() {
-        ScheduleStore.save(morning: morningSelection, work: workSelection, evening: eveningSelection)
+        ScheduleStore.save(morning: morningSelection, work: workSelection, evening: eveningSelection, custom: customSelection, customStartTime: customStartTime, customEndTime: customEndTime)
     }
 
     func loadAllSettings() {
@@ -375,6 +377,9 @@ private extension BlockAppPicker {
         morningSelection = schedules.morning
         workSelection = schedules.work
         eveningSelection = schedules.evening
+        customSelection = schedules.custom
+        customStartTime = schedules.customStartTime
+        customEndTime = schedules.customEndTime
     }
 }
 
@@ -386,6 +391,8 @@ private struct Schedule {
     let color: Color
     var selection: Binding<FamilyActivitySelection>
     var isPickerPresented: Binding<Bool>
+    var startTime: Binding<Date>?
+    var endTime: Binding<Date>?
 }
 
 /// An enhanced schedule picker row with ChatbotView design consistency
@@ -405,6 +412,13 @@ private struct EnhancedSchedulePickerRow: View {
             return "9:00 AM - 5:00 PM"
         case "Evening":
             return "8:00 PM - 10:00 PM"
+        case "Custom":
+            if let startTime = schedule.startTime?.wrappedValue, let endTime = schedule.endTime?.wrappedValue {
+                let formatter = DateFormatter()
+                formatter.timeStyle = .short
+                return "\(formatter.string(from: startTime)) - \(formatter.string(from: endTime))"
+            }
+            return "Select time"
         default:
             return ""
         }
@@ -418,70 +432,89 @@ private struct EnhancedSchedulePickerRow: View {
         Button {
             schedule.isPickerPresented.wrappedValue = true
         } label: {
-            HStack(spacing: 16) {
-                // Icon with background
-                ZStack {
-                    Circle()
-                        .fill(schedule.color.opacity(0.15))
-                        .frame(width: 50, height: 50)
-                    
-                    Image(systemName: schedule.icon)
-                        .font(.title2)
-                        .fontWeight(.medium)
-                        .foregroundStyle(schedule.color)
-                }
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Text(schedule.name)
-                            .font(.headline)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.primary)
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 16) {
+                    // Icon with background
+                    ZStack {
+                        Circle()
+                            .fill(schedule.color.opacity(0.15))
+                            .frame(width: 50, height: 50)
                         
-                        Spacer()
-                        
-                        if selectionCount > 0 {
-                            HStack(spacing: 4) {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .font(.caption)
-                                    .foregroundStyle(.green)
-                                
-                                Text("\(selectionCount)")
-                                    .font(.caption)
-                                    .fontWeight(.medium)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(
-                                        LinearGradient(
-                                            colors: [.purple.opacity(0.2), .blue.opacity(0.2)],
-                                            startPoint: .leading,
-                                            endPoint: .trailing
-                                        )
-                                    )
-                                    .clipShape(Capsule())
-                                    .foregroundStyle(LinearGradient(colors: [.purple, .blue], startPoint: .leading, endPoint: .trailing))
-                            }
-                        }
+                        Image(systemName: schedule.icon)
+                            .font(.title2)
+                            .fontWeight(.medium)
+                            .foregroundStyle(schedule.color)
                     }
                     
-                    Text(timeInterval)
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundColor(.secondary)
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text(schedule.name)
+                                .font(.headline)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.primary)
+                            
+                            Spacer()
+                            
+                            if selectionCount > 0 {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .font(.caption)
+                                        .foregroundStyle(.green)
+                                    
+                                    Text("\(selectionCount)")
+                                        .font(.caption)
+                                        .fontWeight(.medium)
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(
+                                            LinearGradient(
+                                                colors: [.purple.opacity(0.2), .blue.opacity(0.2)],
+                                                startPoint: .leading,
+                                                endPoint: .trailing
+                                            )
+                                        )
+                                        .clipShape(Capsule())
+                                        .foregroundStyle(LinearGradient(colors: [.purple, .blue], startPoint: .leading, endPoint: .trailing))
+                                }
+                            }
+                        }
+                        
+                        Text(timeInterval)
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.secondary)
+                        
+                        Text(statusText)
+                            .font(.caption)
+                            .foregroundStyle(
+                                selectionCount == 0 ?
+                                LinearGradient(colors: [.purple, .blue], startPoint: .leading, endPoint: .trailing) :
+                                LinearGradient(colors: [.green], startPoint: .leading, endPoint: .trailing)
+                            )
+                    }
                     
-                    Text(statusText)
+                    Image(systemName: "chevron.right")
                         .font(.caption)
-                        .foregroundStyle(
-                            selectionCount == 0 ?
-                            LinearGradient(colors: [.purple, .blue], startPoint: .leading, endPoint: .trailing) :
-                            LinearGradient(colors: [.green], startPoint: .leading, endPoint: .trailing)
-                        )
+                        .fontWeight(.medium)
+                        .foregroundStyle(.tertiary)
                 }
                 
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .foregroundStyle(.tertiary)
+                if schedule.name == "Custom", let startTime = schedule.startTime, let endTime = schedule.endTime {
+                    HStack {
+                        DatePicker("Start Time", selection: startTime, displayedComponents: .hourAndMinute)
+                            .datePickerStyle(.compact)
+                            .labelsHidden()
+                        
+                        Text("-")
+                        
+                        DatePicker("End Time", selection: endTime, displayedComponents: .hourAndMinute)
+                            .datePickerStyle(.compact)
+                            .labelsHidden()
+                        
+                        Spacer()
+                    }
+                    .padding(.leading, 66) // Align with text above
+                }
             }
             .padding(16)
             .background(.ultraThinMaterial)
@@ -501,20 +534,29 @@ private enum ScheduleStore {
     static let morningKey = "morningSelectionV2"
     static let workKey = "workSelectionV2"
     static let eveningKey = "eveningSelectionV2"
+    static let customKey = "customSelectionV2"
+    static let customStartTimeKey = "customStartTimeV2"
+    static let customEndTimeKey = "customEndTimeV2"
 
-    static func save(morning: FamilyActivitySelection, work: FamilyActivitySelection, evening: FamilyActivitySelection) {
+    static func save(morning: FamilyActivitySelection, work: FamilyActivitySelection, evening: FamilyActivitySelection, custom: FamilyActivitySelection, customStartTime: Date, customEndTime: Date) {
         let defaults = UserDefaults(suiteName: suiteName)
         try? defaults?.set(JSONEncoder().encode(morning), forKey: morningKey)
         try? defaults?.set(JSONEncoder().encode(work), forKey: workKey)
         try? defaults?.set(JSONEncoder().encode(evening), forKey: eveningKey)
+        try? defaults?.set(JSONEncoder().encode(custom), forKey: customKey)
+        defaults?.set(customStartTime, forKey: customStartTimeKey)
+        defaults?.set(customEndTime, forKey: customEndTimeKey)
     }
 
-    static func load() -> (morning: FamilyActivitySelection, work: FamilyActivitySelection, evening: FamilyActivitySelection) {
+    static func load() -> (morning: FamilyActivitySelection, work: FamilyActivitySelection, evening: FamilyActivitySelection, custom: FamilyActivitySelection, customStartTime: Date, customEndTime: Date) {
         let defaults = UserDefaults(suiteName: suiteName)
         let morning = loadSelection(forKey: morningKey, from: defaults)
         let work = loadSelection(forKey: workKey, from: defaults)
         let evening = loadSelection(forKey: eveningKey, from: defaults)
-        return (morning, work, evening)
+        let custom = loadSelection(forKey: customKey, from: defaults)
+        let customStartTime = defaults?.object(forKey: customStartTimeKey) as? Date ?? Calendar.current.date(bySettingHour: 18, minute: 0, second: 0, of: Date())!
+        let customEndTime = defaults?.object(forKey: customEndTimeKey) as? Date ?? Calendar.current.date(bySettingHour: 20, minute: 0, second: 0, of: Date())!
+        return (morning, work, evening, custom, customStartTime, customEndTime)
     }
 
     private static func loadSelection(forKey key: String, from defaults: UserDefaults?) -> FamilyActivitySelection {
