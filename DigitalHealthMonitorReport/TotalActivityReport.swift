@@ -34,6 +34,6 @@ struct TotalActivityReport: DeviceActivityReportScene {
         let totalActivityDuration = await data.flatMap { $0.activitySegments }.reduce(0, {
             $0 + $1.totalActivityDuration
         })
-        return formatter.string(from: totalActivityDuration) ?? "No activity data"
+        return formatter.string(from: totalActivityDuration) ?? "0m"
     }
 }

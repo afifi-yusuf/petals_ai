@@ -28,7 +28,6 @@ struct DashboardView: View {
     
     
     
-
     var body: some View {
         NavigationView {
             ZStack {
@@ -207,37 +206,6 @@ struct ScreenTimeSummaryCard: View {
                 .font(.caption)
                 .foregroundColor(.orange)
                 .buttonStyle(.plain)
-            }
-
-            // Content Section
-            VStack(alignment: .leading, spacing: 12) {
-                // Screen Time Display
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Daily Screen Time")
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .foregroundColor(.secondary)
-                    
-                    HStack(alignment: .center, spacing: 8) {
-                        DeviceActivityReport(.pieChart, filter: filter)
-                            .frame(height: 24)
-                        
-                        Image(systemName: "clock")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .padding(12)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(.regularMaterial)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(.quaternary, lineWidth: 0.5)
-                        )
-                )
-                
             }
         }
         .padding(20)
