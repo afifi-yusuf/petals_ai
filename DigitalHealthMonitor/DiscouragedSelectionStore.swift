@@ -10,7 +10,7 @@ import Foundation
 import FamilyControls
 
 enum DiscouragedSelectionStore {
-    static let suite = "group.com.petals.ai"     // <— your App Group ID
+            static let suite = "group.com.Petals-AI"     // <— your App Group ID
     static let key   = "discouragedSelection"
 
     static func save(_ selection: FamilyActivitySelection) {

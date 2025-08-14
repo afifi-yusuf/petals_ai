@@ -11,7 +11,7 @@ import os
 
 // MARK: - Your Existing Selection Store (Updated with Error Handling)
 enum DiscouragedSelectionStore {
-    static let suite = "group.com.petals.ai"
+            static let suite = "group.com.Petals-AI"
     static let key = "discouragedSelection"
     
     private static let logger = Logger(subsystem: "com.petals.ai.screentime", category: "SelectionStore")

@@ -14,6 +14,7 @@ extension DeviceActivityName {
 @MainActor
 final class ScreenTimeManager: ObservableObject {
     static let shared = ScreenTimeManager()
+    static let suiteName = "group.com.Petals-AI"
     private let center = DeviceActivityCenter()
 
     @Published private(set) var isAuthorized = false

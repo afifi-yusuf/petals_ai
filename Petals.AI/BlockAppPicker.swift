@@ -530,7 +530,7 @@ private struct EnhancedSchedulePickerRow: View {
 /// A data store for saving and loading the three schedule selections.
 private enum ScheduleStore {
     // IMPORTANT: Use your actual App Group name from your project settings
-    static let suiteName = "group.com.example.YourApp"
+    static let suiteName = "group.com.Petals-AI"
     static let morningKey = "morningSelectionV2"
     static let workKey = "workSelectionV2"
     static let eveningKey = "eveningSelectionV2"

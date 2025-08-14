@@ -603,7 +603,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.Petals-AI.DigitalHealthMonitoringReport";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "petalsprod-dhmr1";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "petalsprod-dhmr3";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -638,7 +638,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.Petals-AI.DigitalHealthMonitoringReport";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "petalsprod-dhmr1";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "petalsprod-dhmr3";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
