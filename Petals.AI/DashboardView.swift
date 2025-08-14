@@ -4,6 +4,13 @@ import SwiftData
 import HealthKit
 import FamilyControls
 
+extension DeviceActivityReport.Context {
+    // If your app initializes a DeviceActivityReport with this context, then the system will use
+    // your extension's corresponding DeviceActivityReportScene to render the contents of the
+    // report.
+    static let totalActivity = Self("Total Activity")
+}
+
 struct DashboardView: View {
     @State private var healthStore = HKHealthStore()
     @State private var stepsStatus: HealthDataManager.HealthDataStatus?
@@ -623,6 +630,46 @@ struct TodaysMoodCard: View {
     }
 }
 
+// MARK: - Screen Time Stat Card
+struct ScreenTimeStatCard: View {
+    let title: String
+    let subtitle: String
+    let icon: String
+    let gradientColors: [Color]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: icon)
+                    .font(.title2)
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: gradientColors,
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                Spacer()
+            }
+            
+            DeviceActivityReport(.totalActivity)
+                .frame(height: 50)
+
+            Text(subtitle)
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.leading)
+        }
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(.ultraThinMaterial)
+                .shadow(color: gradientColors.first?.opacity(0.2) ?? .gray.opacity(0.2), radius: 10, x: 0, y: 5)
+        )
+        .frame(width: 170, height: 170)
+    }
+}
+
 // MARK: - Detailed Health View
 struct DetailedHealthView: View {
     let stepsStatus: HealthDataManager.HealthDataStatus?
@@ -679,6 +726,13 @@ struct DetailedHealthView: View {
                         gradientColors: [.red, .orange],
                         progress: activeEnergyStatus?.hasData == true ? min(activeEnergyStatus!.value / 500, 1.0) : 0.0,
                         hasData: activeEnergyStatus?.hasData ?? false
+                    )
+                    
+                    ScreenTimeStatCard(
+                        title: "Screen Time",
+                        subtitle: "Total screen time today",
+                        icon: "iphone.gen1",
+                        gradientColors: [.blue, .purple]
                     )
                 }
                 .padding()
