@@ -89,7 +89,7 @@ struct DashboardView: View {
         .onAppear {
             Task {
                 await fetchHealthData()
-                await getLatestStreak()
+                await updateStreak()
                 moodManager.currentStreak = streak
             }
             screenTimeManager.refreshAuthorizationStatus()
@@ -133,15 +133,26 @@ struct DashboardView: View {
         }
     }
 
-    func getLatestStreak() async {
+    func updateStreak() async {
         do {
             let logs = try modelContext.fetch(
                 FetchDescriptor<StreakLogModel>(sortBy: [.init(\.date, order: .reverse)])
             )
-            print(logs)
-            streak = logs.first?.streak ?? 0
+            let lastLog = logs.first
+            let newStreak = StreakLogModel.calculateStreak(lastDate: lastLog?.date, currentDate: Date(), currentStreak: lastLog?.streak ?? 0)
+            
+            // Only add a new log if the day has changed
+            if !Calendar.current.isDateInToday(lastLog?.date ?? .distantPast) {
+                let newLog = StreakLogModel(date: Date(), lastDate: lastLog?.date, lastStreak: lastLog?.streak ?? 0)
+                modelContext.insert(newLog)
+                try modelContext.save()
+                streak = newLog.streak
+            } else {
+                streak = lastLog?.streak ?? 0
+            }
+            
         } catch {
-            print("Failed to fetch streak: \(error)")
+            print("Failed to update streak: \(error)")
             streak = -2
         }
     }

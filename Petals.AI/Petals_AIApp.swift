@@ -37,7 +37,8 @@ struct Petals_AIApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Item.self,
-            JournalLogModel.self
+            JournalLogModel.self,
+            StreakLogModel.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
