@@ -27,8 +27,30 @@ struct Petals_AIApp: App {
             NotificationManager.shared.requestAuthorization()
             NotificationManager.shared.scheduleDailyCheckIn(at: dailyReminderTime)
         }
-       
     }
+    func updateStreak() async {
+        let modelContext = ModelContext(sharedModelContainer)
+        do {
+            let logs = try modelContext.fetch(
+                FetchDescriptor<StreakLogModel>(sortBy: [.init(\.date, order: .reverse)])
+            )
+            let lastLog = logs.first
+            
+            // Only add a new log if the day has changed
+            if !Calendar.current.isDateInToday(lastLog?.date ?? .distantPast) {
+                let newLog = StreakLogModel(date: Date(), lastDate: lastLog?.date, lastStreak: lastLog?.streak ?? 0)
+                modelContext.insert(newLog)
+                try modelContext.save()
+                moodManager.currentStreak = newLog.streak
+            } else {
+                moodManager.currentStreak = lastLog?.streak ?? 0
+            }
+            
+        } catch {
+            print("Failed to update streak: \(error)")
+        }
+    }
+
     func resetAppData(){
         UserDefaults.standard.removePersistentDomain(forName: Bundle.main.bundleIdentifier!)
         UserDefaults.standard.synchronize()
@@ -61,7 +83,10 @@ struct Petals_AIApp: App {
                     .fullScreenCover(isPresented: $moodManager.showingMoodPrompt) {
                         DailyMoodPromptView()
                     }
-                    .modelContainer(for: JournalLogModel.self)
+                    .modelContainer(sharedModelContainer)
+                    .task {
+                        await updateStreak()
+                    }
             } else {
                 fatalError("ERROR")
             }

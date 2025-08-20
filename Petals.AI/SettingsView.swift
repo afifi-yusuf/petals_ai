@@ -124,10 +124,14 @@ struct SettingsView: View {
                     .foregroundColor(.primary)
                 }
             }
-        }
-        .onAppear {
-            screenTimeManager.refreshAuthorizationStatus()
-            refreshHealthKitAuthorization()
+            .onAppear {
+                print("[SettingsView] Forcing HealthKit auth refresh...")
+                Task {
+                    try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+                    refreshHealthKitAuthorization()
+                }
+                screenTimeManager.refreshAuthorizationStatus()
+            }
         }
     }
     
@@ -342,4 +346,3 @@ struct PermissionRow: View {
         }
     }
 }
-
