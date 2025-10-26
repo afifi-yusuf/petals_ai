@@ -385,11 +385,15 @@ struct HeroFeatureCard: View {
     let action: () -> Void
     
     @State private var isPressed = false
+    @GestureState private var isLongPressing: Bool = false
+    @State private var isLongPressActive: Bool = false
+    
+    @State private var longPressProgress: CGFloat = 0.0
     
     var body: some View {
-        Button(action: action) {
+        ZStack {
             VStack(spacing: 16) {
-                // Icon with background
+                // Icon with background and circular progress overlay
                 ZStack {
                     Circle()
                         .fill(
@@ -410,6 +414,23 @@ struct HeroFeatureCard: View {
                                 endPoint: .bottomTrailing
                             )
                         )
+                    
+                    if isLongPressActive {
+                        Circle()
+                            .trim(from: 0, to: longPressProgress)
+                            .stroke(
+                                LinearGradient(
+                                    colors: gradientColors,
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                style: StrokeStyle(lineWidth: 4, lineCap: .round)
+                            )
+                            .rotationEffect(.degrees(-90))
+                            .frame(width: 68, height: 68)
+                            .accessibilityLabel(Text("Long press progress"))
+                            .accessibilityValue(Text("\(Int(longPressProgress * 100)) percent"))
+                    }
                 }
                 
                 VStack(spacing: 4) {
@@ -468,12 +489,60 @@ struct HeroFeatureCard: View {
             )
             .scaleEffect(isPressed ? 0.95 : 1.0)
             .animation(.easeInOut(duration: 0.1), value: isPressed)
+            .accessibilityAddTraits(.isButton)
         }
-        .buttonStyle(PlainButtonStyle())
-        .onPressGesture(
-            onPress: { isPressed = true },
-            onRelease: { isPressed = false }
+        .gesture(
+            LongPressGesture(minimumDuration: 2.0)
+                .updating($isLongPressing) { currentState, state, _ in
+                    state = currentState
+                }
+                .onChanged { _ in
+                    // handled by .onChange(of: isLongPressing)
+                }
+                .onEnded { finished in
+                    if finished {
+                        action()
+                    }
+                    resetLongPressState()
+                }
         )
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    if !isLongPressActive {
+                        isPressed = true
+                    }
+                }
+                .onEnded { _ in
+                    if !isLongPressActive {
+                        isPressed = false
+                    }
+                    if !isLongPressActive {
+                        resetLongPressState()
+                    }
+                }
+        )
+        .onChange(of: isLongPressing) { oldValue, newValue in
+            if newValue {
+                startLongPressAnimation()
+            } else {
+                resetLongPressState()
+            }
+        }
+    }
+    
+    private func startLongPressAnimation() {
+        isLongPressActive = true
+        longPressProgress = 0
+        withAnimation(.linear(duration: 2.0)) {
+            longPressProgress = 1.0
+        }
+    }
+    
+    private func resetLongPressState() {
+        isLongPressActive = false
+        isPressed = false
+        longPressProgress = 0.0
     }
 }
 
@@ -525,7 +594,7 @@ struct QuickHealthInsights: View {
                 
                 CompactHealthItem(
                     icon: "flame.fill",
-                    value: activeEnergyStatus?.hasData == true ? "\(String(format: "%.1f", activeEnergyStatus!.value))h" : "—",
+                    value: activeEnergyStatus?.hasData == true ? "\(String(format: "%.1f", activeEnergyStatus!.value))cal" : "—",
                     color: .orange
                 )
                 
